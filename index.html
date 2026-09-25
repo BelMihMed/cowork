@@ -314,7 +314,7 @@
   .linkbtn:hover{color:#fff}
   .sp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-size:13px;color:rgba(255,255,255,.78)}
   .period{display:inline-flex;gap:3px;background:rgba(255,255,255,.08);border-radius:12px;padding:3px}
-  .period button{font:inherit;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);background:transparent;border:0;border-radius:9px;padding:6px 9px;cursor:pointer}
+  .period button{font:inherit;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.75);background:transparent;border:0;border-radius:9px;padding:6px 7px;cursor:pointer;white-space:nowrap}
   .period button[aria-pressed="true"]{background:#fff;color:var(--ink)}
   .seats-in{display:inline-flex;align-items:center;background:rgba(255,255,255,.08);border-radius:12px;border:1.5px solid transparent}
   .seats-in:focus-within{border-color:#8ef0c6;background:rgba(255,255,255,.12)}
@@ -1113,12 +1113,62 @@ function choosePreset(id){
   syncCards();
   recompute();
 }
-// «Сбросить»: типовые значения, пресет по умолчанию, ручные правки забыты (T11 добавит очистку сохранённого состояния)
+// «Сбросить»: типовые значения, пресет по умолчанию, ручные правки и сохранённое состояние забыты
 function resetAll(){
+  clearSavedState();
   initState();
   pricing.tierSel = null; pricing.period = 1; pricing.seatsManual = false; pricing.seats = 1;
   choosePreset(DEFAULT_PRESET);
 }
+
+/* ---------- Сохранение состояния (T11, ТЗ §4.5): localStorage, ключ со схемой; смена схемы отбрасывает старое ---------- */
+const STATE_KEY = "cowork_state_v1";
+const STATE_SCHEMA = 1;
+function readCompanyInputs(){
+  const c = {};
+  document.querySelectorAll(".comp-in").forEach(inp=>{ c[inp.dataset.comp] = inp.value; });
+  return c;
+}
+function saveState(){
+  const tasks = {};
+  TASKS.forEach(t=>{ const st = state[t.id]; tasks[t.id] = {selected: st.selected, values: st.values, dirty: st.dirty}; });
+  lsSet(STATE_KEY, JSON.stringify({
+    schema: STATE_SCHEMA, savedAt: Date.now(), preset: activePreset,
+    tasks, company: readCompanyInputs(), companyName: ($("company-name") || {}).value || "",
+    pricing: {tierSel: pricing.tierSel, period: pricing.period, seatsManual: pricing.seatsManual, seats: pricing.seats},
+  }));
+}
+// восстановление: true, если сохранённое состояние подхвачено; иначе применяется пресет по умолчанию
+function restoreState(){
+  let s = null;
+  try { s = JSON.parse(lsGet(STATE_KEY, "null")); } catch(e){ s = null; }
+  if(!s || s.schema !== STATE_SCHEMA || !s.tasks) return false;
+  Object.entries(s.company || {}).forEach(([k, v])=>{
+    const inp = document.querySelector('.comp-in[data-comp="'+k+'"]');
+    if(!inp || typeof v !== "string") return;
+    if(inp.value !== v){ inp.value = groupFmt(v); inp.classList.remove("prefilled"); }
+  });
+  if($("company-name") && typeof s.companyName === "string") $("company-name").value = s.companyName;
+  TASKS.forEach(t=>{
+    const saved = s.tasks[t.id], st = state[t.id];
+    if(!saved) return;
+    st.selected = !!saved.selected;
+    TASK_FIELDS.forEach(k=>{
+      const v = saved.values && saved.values[k];
+      if(k === "u"){ if(PERIOD_MULT[v]) st.values.u = v; }
+      else if(v !== undefined && v !== null && !Number.isNaN(Number(v))) st.values[k] = Number(v);
+    });
+    st.dirty = Object.assign({}, saved.dirty || {});
+  });
+  const p = s.pricing || {};
+  pricing.tierSel = tierById(p.tierSel) ? p.tierSel : null;
+  pricing.period = periodByMonths(p.period).months;
+  pricing.seatsManual = !!p.seatsManual;
+  pricing.seats = Math.max(1, Math.round(num(p.seats)) || 1);
+  markPreset(PRESETS[s.preset] ? s.preset : null);
+  return true;
+}
+function clearSavedState(){ try{ localStorage.removeItem(STATE_KEY); }catch(e){} }
 
 /* ---------- События карточек: делегирование, без перерисовки списка ---------- */
 $("groups").addEventListener("change", e=>{
@@ -1193,7 +1243,7 @@ function renderPanel(res, tariff, sub, econ){
   $("tier-auto").hidden = !tariff.manual;
   document.querySelectorAll("#period button").forEach(b=> b.setAttribute("aria-pressed", String(Number(b.dataset.m) === tariff.months)));
   const seatsEl = $("seats");
-  if(document.activeElement !== seatsEl) seatsEl.value = String(tariff.seats);
+  if(!pricing.seatsManual || document.activeElement !== seatsEl) seatsEl.value = String(tariff.seats);   // в ручном режиме не мешаем набору
   $("seats-auto").hidden = !pricing.seatsManual;
   $("seats-hint").textContent = pricing.seatsManual ? "" : "(по числу людей)";
 
@@ -1289,6 +1339,7 @@ function recompute(){
     ? "Освободится: <b>" + fmtHours(res.totalHours) + "/мес</b> · <b>" + fmtMoney(res.totalFot) + "/мес</b>" : "";
 
   renderPanel(res, tariff, sub, econ);
+  saveState();
 }
 function plural(n, forms){ const n10 = n % 10, n100 = n % 100; if(n10===1 && n100!==11) return forms[0]; if(n10>=2 && n10<=4 && (n100<10 || n100>=20)) return forms[1]; return forms[2]; }
 $("price-date").textContent = priceDateText();
@@ -1425,7 +1476,8 @@ document.addEventListener("click", e=>{
 renderPresets();
 renderGroups();
 renderTiers();
-choosePreset(DEFAULT_PRESET);   // стартовый пресет (T11 будет восстанавливать сохранённое состояние)
+if(restoreState()){ syncCards(); recompute(); }   // прошлый заход: задачи, поля, компания, пресет, тариф
+else choosePreset(DEFAULT_PRESET);
 </script>
 </body>
 </html>
