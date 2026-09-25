@@ -206,18 +206,89 @@
   }
   /* @core:end */
 
-  /* ---------- Коворк: продуктовые стили (каркас T5; карточки задач, пресеты и навбар — T8, панель итога — T10) ---------- */
+  /* ---------- Коворк: продуктовые стили (T8 — интерфейс задач; T10 — панель итога) ---------- */
+  :root{
+    --task-boss-ink:#5b47d6;  --task-boss-bg:#f1eeff;
+    --task-sales-ink:#0057cc; --task-sales-bg:#e6f0ff;
+    --task-mkt-ink:#0e6e5c;   --task-mkt-bg:#ecf7f3;
+  }
   .layout{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
   @media(min-width:900px){
     .layout{grid-template-columns:minmax(0,1fr) 340px}
-    .summary-panel{position:sticky;top:calc(12px + env(safe-area-inset-top,0px))}
+    .summary-panel{position:sticky;top:calc(76px + env(safe-area-inset-top,0px))}
   }
   .groups{min-width:0}
+  .navbar{top:calc(10px + env(safe-area-inset-top,0px))}
+  .navbar .chip[data-go="sec-boss"]{color:var(--task-boss-ink);background:var(--task-boss-bg)}
+  .navbar .chip[data-go="sec-sales"]{color:var(--task-sales-ink);background:var(--task-sales-bg)}
+  .navbar .chip[data-go="sec-mkt"]{color:var(--task-mkt-ink);background:var(--task-mkt-bg)}
+  .navbar .chip.go-summary{color:#fff;background:linear-gradient(95deg,var(--cw-accent),hsl(205,78%,48%))}
+  .navbar .reset{font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:10px}
+  .navbar .reset:hover{color:var(--ink);background:var(--panel)}
+  .group-boss,.group-sales,.group-mkt,.summary-panel{scroll-margin-top:84px}
+
+  /* пресеты «Кто вы?» */
+  .presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:18px}
+  .presets .lbl{font-size:13px;font-weight:700;color:var(--muted);margin-right:4px}
+  .presets .pchip{font:inherit;font-size:13.5px;font-weight:700;color:var(--cw-accent-ink);background:var(--cw-accent-soft);
+    border:0;border-radius:20px;padding:9px 16px;cursor:pointer;transition:background-color .15s,color .15s}
+  .presets .pchip:hover{filter:brightness(.97)}
+  .presets .pchip[aria-pressed="true"]{color:#fff;background:var(--cw-accent)}
+
+  /* ставка часа рядом с окладом */
+  .rate-hint{font-size:12px;color:var(--faint);margin-top:5px;font-family:'JetBrains Mono',monospace}
+
+  /* группы задач */
+  .group{border-radius:24px;padding:20px 20px 10px;margin-bottom:18px}
+  .group-boss{background:var(--task-boss-bg)} .group-sales{background:var(--task-sales-bg)} .group-mkt{background:var(--task-mkt-bg)}
+  .group-label{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:2px 6px 16px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+  .group-label small{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
+  .group-boss .group-label{color:var(--task-boss-ink)} .group-sales .group-label{color:var(--task-sales-ink)} .group-mkt .group-label{color:var(--task-mkt-ink)}
+  .group-boss .chk:checked{background:var(--task-boss);border-color:var(--task-boss)}
+  .group-sales .chk:checked{background:var(--task-sales);border-color:var(--task-sales)}
+  .group-mkt .chk:checked{background:var(--task-mkt);border-color:var(--task-mkt)}
+  .group-boss .card.active{box-shadow:0 0 0 2px var(--task-boss),0 12px 30px rgba(123,97,255,.14)}
+  .group-sales .card.active{box-shadow:0 0 0 2px var(--task-sales),0 12px 30px rgba(0,109,255,.14)}
+  .group-mkt .card.active{box-shadow:0 0 0 2px var(--task-mkt),0 12px 30px rgba(18,134,111,.14)}
+
+  /* карточка задачи */
+  .card{background:#fff;border:0;border-radius:var(--radius);margin-bottom:12px;overflow:hidden;box-shadow:var(--card-shadow);transition:box-shadow .18s}
+  .card:last-child{margin-bottom:0}
+  .card-head{display:flex;align-items:flex-start;gap:14px;padding:18px 22px;cursor:pointer;user-select:none;transition:background .15s}
+  .card-head:hover{background:#fafafc}
+  .task-chk{border-radius:50%}
+  .card-title{flex:1;min-width:0}
+  .card-title .t{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .card-title .s{display:block;font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .pill,.flag{font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+  .pill.hand{background:var(--panel);color:var(--muted)}
+  .pill.ai{background:var(--cw-accent-soft);color:var(--cw-accent-ink)}
+  .flag.code{background:#f1eeff;color:#5b47d6}
+  .flag.est{background:#fdf6ea;color:#a9701f}
+  .card-body{padding:0 22px 22px;border-top:1px solid #f2f2f5}
+  .card-body[hidden]{display:none}
+  .in .unit-sel{border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);padding:10px 8px 10px 4px;cursor:pointer}
+  .field.freq .in input{flex:0 0 64px;width:64px;padding-right:4px}
+  .result{margin-top:16px;background:var(--panel);border:0;border-radius:14px;padding:13px 18px}
+  .res-head{display:flex;justify-content:flex-end;margin:-2px 0 2px}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0;font-size:15px}
+  .res-row .lbl{color:var(--muted)}
+  .res-row .val{font-weight:800;font-variant-numeric:tabular-nums;color:var(--cw-accent-ink);text-align:right}
+  .res-row .val small{font-weight:600;color:var(--muted);font-size:12.5px}
+  .real-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);border-top:1px dashed #dcdce2;margin-top:6px;padding:8px 0 1px}
+  .real-row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .real-row .info-btn{padding:0 1px} .real-row .info-btn svg{width:15px;height:15px}
+  .prompt{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);background:var(--cw-accent-soft);border-radius:12px;padding:11px 14px}
+  .prompt b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cw-accent-ink);margin-bottom:4px}
+
+  /* панель итога (каркас; содержимое — T10) */
   .summary-panel{color:#fff;border:0;border-radius:26px;padding:26px 28px;
     background:linear-gradient(135deg,hsl(258,52%,22%),hsl(226,55%,25%),hsl(190,52%,23%));
     box-shadow:0 20px 54px rgba(30,24,70,.28)}
   .summary-panel h2{margin:0 0 12px;font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:18px;color:#fff}
   .summary-panel .empty{color:rgba(255,255,255,.82);font-size:14.5px;line-height:1.55}
+  .summary-panel .empty b{color:#fff}
   .stage-note{background:var(--cw-accent-soft);color:var(--cw-accent-ink);border-radius:14px;padding:13px 18px;font-size:14px;line-height:1.5}
   .stage-note b{font-weight:800}
 </style>
@@ -231,7 +302,7 @@
     <p class="lede">Отметьте задачи, которые вы делаете руками, и посмотрите, сколько часов и денег в месяц освобождает Коворк/Код. Считаем по той же методике, что и калькулятор BitrixGPT: с коэффициентом реализуемости и датированными ценами.</p>
   </div>
 
-  <!-- пресеты «Кто вы?» (T8): чипы «Я руководитель», «Я в продажах», «Я в маркетинге», «Считаю для команды» -->
+  <div class="presets" id="presets" role="group" aria-label="Кто вы?"></div>
 
   <div class="company" id="company">
     <!-- @core:company-html -->
@@ -258,12 +329,22 @@
     <!-- @core:end -->
   </div>
 
-  <!-- липкий навбар с чипами групп и мини-итогом (T8) -->
+  <div class="navbar">
+    <div class="navchips">
+      <button type="button" class="chip" data-go="sec-boss">Руководитель</button>
+      <button type="button" class="chip" data-go="sec-sales">Продажи</button>
+      <button type="button" class="chip" data-go="sec-mkt">Маркетинг</button>
+      <button type="button" class="chip go-summary" data-go="summary">Итог ↓</button>
+    </div>
+    <div class="mini">
+      <span class="cnt" id="nav-count">Ничего не выбрано</span>
+      <span id="nav-total"></span>
+      <button type="button" class="reset" id="reset-btn" title="Вернуть типовые значения и пресет по умолчанию">Сбросить</button>
+    </div>
+  </div>
 
   <div class="layout">
-    <div class="groups" id="groups">
-      <div class="stage-note"><b>Страница собирается.</b> Список задач, пресеты и подбор тарифа появятся на следующих этапах разработки. Уже работает общее ядро: данные о компании, ставка часа и методика расчёта.</div>
-    </div>
+    <div class="groups" id="groups"></div>
     <aside class="summary-panel" id="summary" aria-live="polite">
       <h2>Вы освободите в месяц</h2>
       <div id="summary-body"><p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p></div>
@@ -820,18 +901,171 @@ const priceDateText = () => "Цены актуальны на " + formatConfigDa
   + (thresholdsAreEstimate() ? " Пороги тарифов — ориентир до подтверждения продуктом." : "");   // дата уже кончается на «г.»
 // @cw:end
 
-/* ---------- Связка модели со страницей (интерфейс карточек — T8, панель итога — T10) ---------- */
+/* ---------- Связка модели со страницей: интерфейс задач (T8); панель итога — T10 ---------- */
 // значения блока «Данные о компании» → {empCount, empSal, mgrCount, mgrSal, ropCount, ropSal}
 function readCompany(){
   const c = {};
   document.querySelectorAll(".comp-in").forEach(inp=>{ c[inp.dataset.comp] = parseNum(inp.value); });
   return c;
 }
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const $ = id => document.getElementById(id);
+
+// «≈ N ₽/ч» под окладом каждой роли — ставка выводится автоматически, единой ставки нет (ТЗ §3.1)
+function renderRateHints(company){
+  Object.values(ROLES).forEach(role=>{
+    const inp = document.querySelector('.comp-in[data-comp="'+role.sal+'"]');
+    if(!inp) return;
+    const field = inp.closest(".field");
+    let hint = field.querySelector(".rate-hint");
+    if(!hint){ hint = document.createElement("div"); hint.className = "rate-hint"; field.appendChild(hint); }
+    hint.textContent = "≈ " + fmtMoney(costHour(num(company[role.sal]))) + "/ч";
+  });
+}
+
+/* ---------- Карточки задач: рендер один раз, дальше точечные обновления (ТЗ §4.5) ---------- */
+const UNIT_OPTIONS = Object.keys(PERIOD_LABEL);
+function fieldHtml(task, k, label, suf){
+  return '<div class="field" data-field="'+k+'"><label>'+label+'</label><div class="in">'
+    + '<input type="text" inputmode="decimal" class="num-in" data-k="'+k+'" value="'+groupFmt(String(task[k]))+'" aria-label="'+label+', '+esc(task.n)+'">'
+    + '<span class="suf">'+suf+'</span></div></div>';
+}
+function cardHtml(task){
+  const flags = (task.code ? '<span class="flag code">режим Код</span>' : '') + (task.est ? '<span class="flag est">примерно</span>' : '');
+  const units = UNIT_OPTIONS.map(u=>'<option value="'+u+'"'+(u===task.u?' selected':'')+'>'+PERIOD_LABEL[u]+'</option>').join("");
+  return '<div class="card" id="card-'+task.id+'" data-id="'+task.id+'">'
+    + '<label class="card-head" for="chk-'+task.id+'">'
+    +   '<input type="checkbox" class="chk task-chk" id="chk-'+task.id+'" data-id="'+task.id+'">'
+    +   '<span class="card-title"><span class="t">'+esc(task.n)+'</span><span class="s">'+esc(task.p)+'</span>'
+    +   '<span class="pills"><span class="pill hand" data-out="b">Сейчас · '+fmtMin(task.b)+'</span><span class="pill ai" data-out="a">С Коворком · '+fmtMin(task.a)+'</span>'+flags+'</span></span>'
+    + '</label>'
+    + '<div class="card-body" hidden>'
+    +   '<div class="fields">'
+    +     fieldHtml(task, "b", "Сейчас", "мин")
+    +     fieldHtml(task, "a", "С Коворком", "мин")
+    +     '<div class="field freq" data-field="f"><label>Как часто</label><div class="in">'
+    +       '<input type="text" inputmode="decimal" class="num-in" data-k="f" value="'+task.f+'" aria-label="Как часто, '+esc(task.n)+'">'
+    +       '<select class="unit-sel" data-k="u" aria-label="Единица периода">'+units+'</select></div></div>'
+    +     fieldHtml(task, "c", "Сколько человек", "чел.")
+    +   '</div>'
+    +   '<div class="result">'
+    +     '<div class="res-head"><button type="button" class="info-btn" data-info="'+task.id+'" aria-label="Как считается экономия">'+ICON_INFO+'</button></div>'
+    +     '<div class="res-row total"><span class="lbl">Вы экономите</span><span class="val" data-out="sum"></span></div>'
+    +     '<div class="real-row">В расчёте учтена реализуемая доля: <b data-out="real"></b>'
+    +       '<button type="button" class="info-btn" data-real="'+task.id+'" aria-label="Почему такой коэффициент">'+ICON_INFO+'</button></div>'
+    +   '</div>'
+    +   '<p class="prompt"><b>Попробуйте написать Коворку</b>«'+esc(task.q)+'»</p>'
+    + '</div></div>';
+}
+function renderGroups(){
+  const root = $("groups");
+  root.innerHTML = GROUPS.map(g=>{
+    const tasks = TASKS.filter(t=>t.group===g.id);
+    return '<section class="group group-'+g.id+'" id="sec-'+g.id+'" aria-labelledby="lbl-'+g.id+'">'
+      + '<div class="group-label"><span id="lbl-'+g.id+'">'+g.title+'</span><small data-count="'+g.id+'"></small></div>'
+      + tasks.map(cardHtml).join("") + '</section>';
+  }).join("");
+}
+// карточка ← состояние: чекбокс, раскрытие, значения полей (после пресета, сброса или восстановления)
+function syncCards(){
+  TASKS.forEach(t=>{
+    const st = state[t.id], card = $("card-"+t.id);
+    if(!card) return;
+    card.querySelector(".task-chk").checked = st.selected;
+    card.classList.toggle("active", st.selected);
+    card.querySelector(".card-body").hidden = !st.selected;
+    card.querySelectorAll(".num-in").forEach(inp=>{ inp.value = groupFmt(String(num(st.values[inp.dataset.k]))); });
+    card.querySelector(".unit-sel").value = st.values.u;
+  });
+}
+// одна карточка ← расчёт: плашки, строка экономии, коэффициент
+function updateCard(task, company){
+  const st = state[task.id], card = $("card-"+task.id);
+  if(!card) return;
+  card.querySelector('[data-out="b"]').textContent = "Сейчас · " + fmtMin(num(st.values.b));
+  card.querySelector('[data-out="a"]').textContent = "С Коворком · " + fmtMin(num(st.values.a));
+  if(!st.selected) return;
+  const r = computeTask(task, st, company);
+  card.querySelector('[data-out="sum"]').innerHTML = fmtHours(r.hours) + " в месяц · " + fmtMoney(r.fot)
+    + (r.rawHours > r.hours ? ' <small>освобождается ' + fmtHours(r.rawHours) + '</small>' : '');
+  card.querySelector('[data-out="real"]').textContent = fmtPct(r.real);
+}
+function updateGroupCounts(){
+  GROUPS.forEach(g=>{
+    const tasks = TASKS.filter(t=>t.group===g.id), on = tasks.filter(t=>state[t.id].selected).length;
+    const el = document.querySelector('[data-count="'+g.id+'"]');
+    if(el) el.textContent = "отмечено " + on + " из " + tasks.length;
+  });
+}
+
+/* ---------- Пресеты «Кто вы?» ---------- */
+function renderPresets(){
+  $("presets").innerHTML = '<span class="lbl">Кто вы?</span>' + Object.entries(PRESETS).map(([id,p])=>
+    '<button type="button" class="pchip" data-preset="'+id+'" aria-pressed="false">'+p.label+'</button>').join("");
+}
+let activePreset = null;
+function markPreset(id){
+  activePreset = id;
+  document.querySelectorAll("#presets .pchip").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.preset===id)));
+}
+// любая ручная правка снимает подсветку пресета, данные не сбрасывает (ТЗ §4.1)
+const clearPreset = () => markPreset(null);
+function choosePreset(id){
+  if(!applyPreset(id)) return;
+  pricing.tierSel = null; pricing.seatsManual = false;
+  markPreset(id);
+  syncCards();
+  recompute();
+}
+// «Сбросить»: типовые значения, пресет по умолчанию, ручные правки забыты (T11 добавит очистку сохранённого состояния)
+function resetAll(){
+  initState();
+  pricing.tierSel = null; pricing.period = 1; pricing.seatsManual = false; pricing.seats = 1;
+  choosePreset(DEFAULT_PRESET);
+}
+
+/* ---------- События карточек: делегирование, без перерисовки списка ---------- */
+$("groups").addEventListener("change", e=>{
+  const el = e.target;
+  if(el.classList.contains("task-chk")){
+    const task = taskById(el.dataset.id), st = state[task.id], card = $("card-"+task.id);
+    st.selected = el.checked;
+    card.classList.toggle("active", st.selected);
+    card.querySelector(".card-body").hidden = !st.selected;
+    sessBlock(task.n, st.selected);
+    clearPreset();
+    updateCard(task, readCompany());
+    recompute();
+  } else if(el.classList.contains("unit-sel")){
+    const id = el.closest(".card").dataset.id, st = state[id];
+    st.values.u = el.value; st.dirty.u = true;
+    sessField(id, "u"); clearPreset();
+    updateCard(taskById(id), readCompany());
+    recompute();
+  }
+});
+$("groups").addEventListener("input", e=>{
+  const inp = e.target;
+  if(!inp.classList.contains("num-in")) return;
+  const id = inp.closest(".card").dataset.id, k = inp.dataset.k, st = state[id];
+  st.values[k] = onNumInput(inp);
+  st.dirty[k] = true;                      // ручное значение: пресет и автозаполнение его больше не трогают
+  sessField(id, k); clearPreset();
+  updateCard(taskById(id), readCompany());
+  recompute();
+});
+$("presets").addEventListener("click", e=>{
+  const b = e.target.closest(".pchip"); if(b) choosePreset(b.dataset.preset);
+});
+document.querySelectorAll(".navbar .chip").forEach(btn=>{
+  btn.addEventListener("click", ()=>{ const el = $(btn.dataset.go); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); });
+});
+$("reset-btn").addEventListener("click", resetAll);
 
 // ключ → заголовок и текст модалки «i» (блок info-modal ядра делегирует сюда клики по .info-btn)
 function openInfo(key){
-  const t = document.getElementById("info-title");
-  const x = document.getElementById("info-text");
+  const t = $("info-title");
+  const x = $("info-text");
   const k = String(key);
   sessInfo(k);   // где просят пояснения — зоны трения
   x.textContent = "";
@@ -849,14 +1083,24 @@ function openInfo(key){
   infoModal.hidden = false;
 }
 
-// главный пересчёт: задачи → тариф и подписки → финмодель; панель итога и мини-итог — T10 (пока краткая сводка)
+// главный пересчёт: задачи → тариф и подписки → финмодель; карточки, навбар, панель итога (краткая сводка до T10)
 function recompute(){
-  const res = computeAll(readCompany());
+  const company = readCompany();
+  const res = computeAll(company);
   sessEcon(res.totalFot);   // пик экономии на экране — виден даже без отчёта
   const tariff = resolveTariff(res);
   const sub = subscriptionCost(tariff.chosen.id, tariff.months, tariff.seats);
   const econ = coworkEconomics(res.totalFot, sub);
-  const body = document.getElementById("summary-body");
+
+  renderRateHints(company);
+  TASKS.forEach(t=>{ if(state[t.id].selected) updateCard(t, company); });
+  updateGroupCounts();
+  $("nav-count").textContent = res.items.length
+    ? "Выбрано: " + res.items.length + " " + plural(res.items.length, ["задача","задачи","задач"]) : "Ничего не выбрано";
+  $("nav-total").innerHTML = res.items.length
+    ? "Освободится: <b>" + fmtHours(res.totalHours) + "/мес</b> · <b>" + fmtMoney(res.totalFot) + "/мес</b>" : "";
+
+  const body = $("summary-body");
   if(!res.items.length){
     body.innerHTML = '<p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p>';
     return;
@@ -868,7 +1112,8 @@ function recompute(){
     + fmtMoney(sub.grossMonth) + ' в месяц с НДС. Чистая экономия <b>' + fmtMoney(econ.netMonth) + '</b> в месяц, за первый год '
     + fmtMoney(econ.netFirstYear) + '. ' + verdictText(res, econ) + '</p>';
 }
-document.getElementById("price-date").textContent = priceDateText();
+function plural(n, forms){ const n10 = n % 10, n100 = n % 100; if(n10===1 && n100!==11) return forms[0]; if(n10>=2 && n10<=4 && (n100<10 || n100>=20)) return forms[1]; return forms[2]; }
+$("price-date").textContent = priceDateText();
 
 // @core:company
 // Контракт: state[id] = {values, dirty}; поле блока — `#card-<id> .num-in[data-k=<ключ>]`;
@@ -999,8 +1244,9 @@ document.addEventListener("click", e=>{
 });
 // @core:end
 
-applyPreset(DEFAULT_PRESET);   // стартовый пресет (T11 будет восстанавливать сохранённое состояние)
-recompute();
+renderPresets();
+renderGroups();
+choosePreset(DEFAULT_PRESET);   // стартовый пресет (T11 будет восстанавливать сохранённое состояние)
 </script>
 </body>
 </html>
