@@ -716,6 +716,110 @@ function describeTask(task, st, company){
 }
 // @cw:end
 
+// @cw:pricing
+/* ---------- Цены и тарифы Коворк/Код (ТЗ §3.5): единый датированный конфиг по образцу PRICE_CONFIG ----------
+   Цены и множители объёма — с лендинга cowork.bitrix24.ru (25.09.2026), НДС и курс вайба — helpdesk/vibecode.
+   Пороги в задачах на подписку, правило Кода и скидки за период — из исходной сборки, продуктом не подтверждены:
+   пока thresholdsStatus = "estimate", в интерфейсе и PDF стоит подпись «ориентир» (см. COWORK-DATA.md). */
+const COWORK_PRICE_CONFIG = {
+  actualOn: "2026-09-25",
+  vat: VAT,                                   // из глоссария ядра: цена в вайбах без НДС, к оплате +22%
+  vibeRub: 1,                                 // 1 вайб = 1 ₽ без НДС
+  tiers: [
+    {id:"free",  name:"Free",  vibes:0,     maxRunsPerSeat:6,        note:"5% от объёма Pro", color:"var(--tier-free)"},
+    {id:"pro",   name:"Pro",   vibes:2000,  maxRunsPerSeat:100,      note:"базовый объём",    color:"var(--tier-pro)"},
+    {id:"max",   name:"Max",   vibes:10000, maxRunsPerSeat:400,      note:"×5 к Pro",         color:"var(--tier-max)"},
+    {id:"ultra", name:"Ultra", vibes:20000, maxRunsPerSeat:Infinity, note:"×10 к Pro",        color:"var(--tier-ultra)"},
+  ],
+  codeRule: { minTierIfAny:"pro", minTierIfRegular:"max", regularRunsPerMonth:2 },   // задачи Кода: не ниже Pro; регулярно (> 2 запусков/мес) — не ниже Max
+  periods: [ {months:1, discount:0}, {months:3, discount:0.05}, {months:6, discount:0.10}, {months:12, discount:0.20} ],
+  thresholdsStatus: "estimate",              // estimate | confirmed — снимает подпись «ориентир»
+  requires: "Для платных тарифов нужна подписка BitrixGPT + Маркетплейс и платный тариф Битрикс24.",
+};
+const tierById = id => COWORK_PRICE_CONFIG.tiers.find(t=>t.id===id) || null;
+const tierIndex = id => COWORK_PRICE_CONFIG.tiers.findIndex(t=>t.id===id);
+const periodByMonths = m => COWORK_PRICE_CONFIG.periods.find(p=>p.months===Number(m)) || COWORK_PRICE_CONFIG.periods[0];
+const thresholdsAreEstimate = () => COWORK_PRICE_CONFIG.thresholdsStatus !== "confirmed";
+
+/* ---------- Подбор подписок и тарифа (ТЗ §3.6) ---------- */
+// подписок по умолчанию — максимум «Сколько человек» среди выбранных задач, не меньше 1
+const autoSeats = maxC => Math.max(1, Math.round(num(maxC)));
+
+// runs — задач в месяц по всем людям, codeRuns — запусков задач Кода без множителя c (из computeAll)
+function recommendTier(runs, codeRuns, seats){
+  const cfg = COWORK_PRICE_CONFIG, tiers = cfg.tiers;
+  const perSeat = num(runs) / Math.max(1, num(seats));
+  let idx = tiers.findIndex(t => t.maxRunsPerSeat >= perSeat);
+  if(idx < 0) idx = tiers.length - 1;
+  let codeBump = null;                                   // "any" | "regular" — правило Кода подняло планку
+  if(num(codeRuns) > 0){
+    const regular = num(codeRuns) > cfg.codeRule.regularRunsPerMonth;
+    const minIdx = tierIndex(regular ? cfg.codeRule.minTierIfRegular : cfg.codeRule.minTierIfAny);
+    if(minIdx > idx){ idx = minIdx; codeBump = regular ? "regular" : "any"; }
+  }
+  return { tier: tiers[idx], perSeat, codeBump, runs: num(runs), codeRuns: num(codeRuns), seats: Math.max(1, num(seats)) };
+}
+
+// выбор пользователя поверх автоподбора: тариф вручную, период оплаты, число подписок (сброс возвращает автоподбор)
+const pricing = { tierSel:null, period:1, seatsManual:false, seats:1 };
+function resolveTariff(res){
+  const seats = pricing.seatsManual ? Math.max(1, Math.round(num(pricing.seats))) : autoSeats(res.maxC);
+  const rec = recommendTier(res.runs, res.codeRuns, seats);
+  const chosen = (pricing.tierSel && tierById(pricing.tierSel)) || rec.tier;
+  return { rec, chosen, seats, months: periodByMonths(pricing.period).months, manual: !!pricing.tierSel && chosen.id !== rec.tier.id };
+}
+
+/* ---------- Стоимость подписки (ТЗ §3.5): vibes × vibeRub × (1 − скидка) × (1 + НДС) × подписок ---------- */
+function subscriptionCost(tierId, months, seats){
+  const cfg = COWORK_PRICE_CONFIG, t = tierById(tierId) || cfg.tiers[0], p = periodByMonths(months);
+  const n = Math.max(1, Math.round(num(seats)));
+  const netOne = t.vibes * cfg.vibeRub * (1 - p.discount);          // ₽ без НДС за одну подписку в месяц
+  const grossMonth = netOne * (1 + cfg.vat) * n;
+  return { tier:t, period:p, seats:n, vibesMonth: t.vibes * (1 - p.discount) * n, netMonth: netOne * n, grossMonth, grossYear: grossMonth * 12 };
+}
+
+/* ---------- Финмодель (ТЗ §3.7): calculateEconomics ядра + окупаемость в рабочих днях ---------- */
+function coworkEconomics(totalFot, sub){
+  const fot = num(totalFot);
+  const econ = calculateEconomics(fot, sub.grossYear);            // чистая экономия 1-го года = ФОТ × 12 − подписка × 12
+  const perDay = fot / DAYS_MONTH;
+  return {
+    ...econ,
+    subscriptionMonth: sub.grossMonth, subscriptionYear: sub.grossYear,
+    netMonth: fot - sub.grossMonth,
+    paybackDays: fot > 0 && sub.grossMonth > 0 ? Math.ceil(sub.grossMonth / perDay) : 0,
+    ratio: sub.grossMonth > 0 ? fot / sub.grossMonth : (fot > 0 ? Infinity : 0),
+  };
+}
+
+/* ---------- Тексты подбора (из сборки) ---------- */
+function tierWhy(rec, chosenId){
+  const pr = Math.round(rec.perSeat), T = tierById;
+  const texts = {
+    free:  "Около " + pr + " задач в месяц на человека. Бесплатного тарифа хватит, чтобы познакомиться, но паузы будут частыми.",
+    pro:   "Около " + pr + " задач в месяц на человека — это ежедневная работа: отчёты к планёрке, аналитика по своему отделу. В плотные дни возможна пауза до сброса лимита.",
+    max:   "Около " + pr + " задач в месяц на человека — плотный поток: ежедневные отчёты, аналитика по всей воронке, приложения в Коде.",
+    ultra: "Больше " + pr + " задач в месяц на человека — работа без остановки: много задач параллельно, агенты в фоне, живые дашборды.",
+  };
+  if(!(rec.runs > 0)) return "Отметьте задачи, и калькулятор подскажет тариф.";
+  const base = texts[rec.tier.id];
+  if(chosenId && chosenId !== rec.tier.id){
+    return "Вы выбрали " + T(chosenId).name + ". По вашим задачам подходит " + rec.tier.name + ": " + base.charAt(0).toLowerCase() + base.slice(1);
+  }
+  return base + (rec.codeBump === "regular" ? " Приложения в Коде вы делаете регулярно, а это уровень Max."
+       : rec.codeBump === "any" ? " Есть задача в режиме Код — для неё нужен тариф не ниже Pro." : "");
+}
+function verdictText(res, econ){
+  if(!res.items.length) return "Отметьте задачи, которые делаете руками.";
+  if(econ.subscriptionMonth === 0) return "На бесплатном тарифе вся экономия ваша. Но его объём — 5% от Pro, поэтому для ежедневной работы он быстро закончится.";
+  if(econ.netMonth <= 0) return "Пока экономия меньше подписки. Добавьте задачи, которые повторяются каждый день или неделю.";
+  return "Экономия в " + (Math.round(econ.ratio * 10) / 10).toLocaleString("ru-RU") + " раза больше подписки: она окупается за первые "
+    + Math.max(1, econ.paybackDays) + " раб. дн. месяца.";
+}
+const priceDateText = () => "Цены актуальны на " + formatConfigDate(COWORK_PRICE_CONFIG.actualOn)
+  + (thresholdsAreEstimate() ? " Пороги тарифов — ориентир до подтверждения продуктом." : "");   // дата уже кончается на «г.»
+// @cw:end
+
 /* ---------- Связка модели со страницей (интерфейс карточек — T8, панель итога — T10) ---------- */
 // значения блока «Данные о компании» → {empCount, empSal, mgrCount, mgrSal, ropCount, ropSal}
 function readCompany(){
@@ -745,10 +849,13 @@ function openInfo(key){
   infoModal.hidden = false;
 }
 
-// главный пересчёт: часы и деньги по задачам; панель итога и мини-итог — T10 (пока краткая сводка)
+// главный пересчёт: задачи → тариф и подписки → финмодель; панель итога и мини-итог — T10 (пока краткая сводка)
 function recompute(){
   const res = computeAll(readCompany());
   sessEcon(res.totalFot);   // пик экономии на экране — виден даже без отчёта
+  const tariff = resolveTariff(res);
+  const sub = subscriptionCost(tariff.chosen.id, tariff.months, tariff.seats);
+  const econ = coworkEconomics(res.totalFot, sub);
   const body = document.getElementById("summary-body");
   if(!res.items.length){
     body.innerHTML = '<p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p>';
@@ -756,8 +863,12 @@ function recompute(){
   }
   body.innerHTML = '<p class="empty">Освобождается <b>' + fmtHours(res.totalRawHours) + '</b> в месяц, в результат уходит <b>'
     + fmtHours(res.totalHours) + '</b> — это ' + (Math.round(res.days*10)/10).toLocaleString("ru-RU")
-    + ' рабочих дней. Стоимость этого времени: <b>' + fmtMoney(res.totalFot) + '</b> в месяц. Задач выбрано: ' + res.items.length + '.</p>';
+    + ' рабочих дней. Стоимость этого времени: <b>' + fmtMoney(res.totalFot) + '</b> в месяц.</p>'
+    + '<p class="empty">Подходит тариф <b>' + tariff.rec.tier.name + '</b>' + (tariff.seats > 1 ? ' × ' + tariff.seats : '') + ': '
+    + fmtMoney(sub.grossMonth) + ' в месяц с НДС. Чистая экономия <b>' + fmtMoney(econ.netMonth) + '</b> в месяц, за первый год '
+    + fmtMoney(econ.netFirstYear) + '. ' + verdictText(res, econ) + '</p>';
 }
+document.getElementById("price-date").textContent = priceDateText();
 
 // @core:company
 // Контракт: state[id] = {values, dirty}; поле блока — `#card-<id> .num-in[data-k=<ключ>]`;
