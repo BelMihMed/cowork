@@ -1157,6 +1157,55 @@ function buildCoworkReportHtml(calc, opts){
 }
 // @cw:end
 
+// @cw:analytics
+/* ---------- Аналитика Коворка (T14, ТЗ §6): записи событий; отправка — sendLog ядра, приёмник — report-logger.gs ----------
+   Лист «Отчёты»: те же колонки, что у BitrixGPT (deploy пустой, tariff = имя тарифа Коворка) + preset, tier, period, seats,
+   hoursMonth, rawHoursMonth, netYear. Лист «Копии»: событие copy. Снимок сессии дополняется preset, tier, copies. */
+function coworkEventBase(calc, extra){
+  const {res, tariff, sub, econ} = calc;
+  return Object.assign({
+    ts: new Date().toISOString(),
+    version: PRODUCT_VERSION,
+    preset: extra && extra.preset ? extra.preset : "",
+    tier: tariff.chosen.name,
+    period: tariff.months,
+    seats: tariff.seats,
+    hoursMonth: Math.round(res.totalHours * 10) / 10,
+    econMonth: Math.round(res.totalFot),
+    netYear: Math.round(econ.netFirstYear),
+  }, extra || {});
+}
+function buildCoworkReportRecord(calc, opts){
+  const o = opts || {}, {res, company} = calc;
+  const c = company || {};
+  const companyField = k => (num(c[k]) > 0 ? num(c[k]) : "");
+  return Object.assign(coworkEventBase(calc, {preset: o.preset || ""}), {
+    type: "report",
+    deploy: "",
+    iframe: !!o.iframe, host: o.host || "",
+    company: o.companyName || "",
+    empCount: companyField("empCount"), empSal: companyField("empSal"),
+    mgrCount: companyField("mgrCount"), mgrSal: companyField("mgrSal"),
+    ropCount: companyField("ropCount"), ropSal: companyField("ropSal"),
+    blocks: res.items.map(it=>it.task.n).join(" | "),
+    blocksDetail: res.items.map(it=>it.task.n + "=" + Math.round(it.r.fot)).join(" | "),
+    tariff: calc.tariff.chosen.name,
+    econYear: Math.round(res.totalFot * 12),
+    potMonth: "",
+    rawHoursMonth: Math.round(res.totalRawHours * 10) / 10,
+  });
+}
+function buildCopyRecord(calc, opts){
+  const o = opts || {};
+  return Object.assign(coworkEventBase(calc, {preset: o.preset || ""}), { type: "copy", iframe: !!o.iframe, host: o.host || "" });
+}
+// поля Коворка в снимке сессии ядра (лист «Сессии»)
+function coworkSessionFields(calc, opts){
+  const o = opts || {};
+  return { preset: o.preset || "", tier: calc && calc.tariff ? calc.tariff.chosen.name : "", copies: o.copies || 0 };
+}
+// @cw:end
+
 /* ---------- Связка модели со страницей: интерфейс задач (T8); панель итога — T10 ---------- */
 // значения блока «Данные о компании» → {empCount, empSal, mgrCount, mgrSal, ropCount, ropSal}
 function readCompany(){
@@ -1266,10 +1315,14 @@ function markPreset(id){
 }
 // любая ручная правка снимает подсветку пресета, данные не сбрасывает (ТЗ §4.1)
 const clearPreset = () => markPreset(null);
-function choosePreset(id){
+function choosePreset(id, byUser){
   if(!applyPreset(id)) return;
   pricing.tierSel = null; pricing.seatsManual = false;
   markPreset(id);
+  if(byUser){   // выбор пресета руками — событие сессии; стартовый пресет при загрузке не считается активностью
+    TASKS.forEach(t=>{ if(state[t.id].selected) sessBlock(t.n, true); });
+    sessTouch();
+  }
   syncCards();
   recompute();
 }
@@ -1278,7 +1331,7 @@ function resetAll(){
   clearSavedState();
   initState();
   pricing.tierSel = null; pricing.period = 1; pricing.seatsManual = false; pricing.seats = 1;
-  choosePreset(DEFAULT_PRESET);
+  choosePreset(DEFAULT_PRESET, true);
 }
 
 /* ---------- Сохранение состояния (T11, ТЗ §4.5): localStorage, ключ со схемой; смена схемы отбрасывает старое ---------- */
@@ -1361,7 +1414,7 @@ $("groups").addEventListener("input", e=>{
   recompute();
 });
 $("presets").addEventListener("click", e=>{
-  const b = e.target.closest(".pchip"); if(b) choosePreset(b.dataset.preset);
+  const b = e.target.closest(".pchip"); if(b) choosePreset(b.dataset.preset, true);
 });
 document.querySelectorAll(".navbar .chip").forEach(btn=>{
   btn.addEventListener("click", ()=>{ const el = $(btn.dataset.go); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); });
@@ -1686,6 +1739,30 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
 window.addEventListener("pagehide", ()=> sendSession("pagehide"));
 setInterval(()=> sendSession("timer"), 120000);   // страховка для долгих сессий
 // @core:end
+
+/* ---------- Аналитика: отправка событий (T14) ---------- */
+let copiesCount = 0;
+const hostInfo = () => ({ iframe: inIframe(), host: inIframe() ? (document.referrer || "") : location.href });
+function logCoworkReport(companyName){
+  if(!lastCalc) return;
+  sendLog(buildCoworkReportRecord(lastCalc, Object.assign({preset: activePreset || "", companyName}, hostInfo())));
+  SESS.report = true;                                  // сессия дошла до отчёта
+  SESS.tariff = lastCalc.tariff.chosen.name;
+  SESS.deploy = "";
+  sessTouch(); sendSession("report");                  // снимок сразу, не дожидаясь ухода
+}
+function logCopy(){
+  if(!lastCalc) return;
+  copiesCount++;
+  sendLog(buildCopyRecord(lastCalc, Object.assign({preset: activePreset || ""}, hostInfo())));
+  sessTouch(); sendSession("copy");
+}
+// снимок сессии ядра дополняем полями Коворка: оборачиваем sendLog, чтобы не трогать канон
+const coreSendLog = sendLog;
+sendLog = function(record){
+  if(record && record.type === "session") Object.assign(record, coworkSessionFields(lastCalc, {preset: activePreset || "", copies: copiesCount}));
+  return coreSendLog(record);
+};
 
 // @core:info-modal
 const infoModal = document.createElement("div");
