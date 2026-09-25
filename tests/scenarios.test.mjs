@@ -92,7 +92,8 @@ test("copy text: every line a reader needs, in the accepted order", () => {
 test("report html: sections in the accepted order, task table, costs, method and CTA with QR", () => {
   const m = load();
   const calc = run(m, "team");
-  const html = m.buildCoworkReportHtml(calc, { companyName: "ООО «Ромашка»", logo: "data:image/png;base64,AAA", date: "25 сентября 2026 г.", url: "https://cowork.bitrixgpt.online/" });
+  const html = m.buildCoworkReportHtml(calc, { companyName: "ООО «Ромашка»", logo: "data:image/png;base64,AAA", date: "25 сентября 2026 г.", url: "https://cowork.bitrixgpt.online/" })
+    .replace(/[\u00a0\u202f]/g, " ");   // разделители разрядов toLocaleString — неразрывные пробелы
   const order = ["Данные о компании", "Задачи и освобождённые часы", "Затраты и тариф", "Методика", "Как начать работать с Коворк/Код"];
   const idx = order.map((s) => html.indexOf(`<p class='sec-eyebrow'>${s}</p>`));
   assert.ok(idx.every((i) => i > 0), "все секции есть");
@@ -101,7 +102,7 @@ test("report html: sections in the accepted order, task table, costs, method and
   assert.match(html, /<title>Коворк\/Код — часы и деньги — ООО «Ромашка»<\/title>/);
   assert.match(html, /<img class='logo' src='data:image\/png;base64,AAA'/);
   assert.equal((html.match(/<tr>/g) || []).length, 1 + 7, "заголовок и по строке на задачу (итог — отдельная строка)");
-  assert.match(html, /<tr class='sum'><td>Итого<\/td>.*76 ч.*82 500 ₽/);
+  assert.match(html, /<tr class='sum'><td>Итого<\/td>.*77 ч.*82 500 ₽/);   // 76,53 ч → «77 ч»
   assert.match(html, /Тариф Коворк\/Код — «Pro», подписок: 5, оплата помесячно<\/span><span class='tv'>10 000 Ꝟ\/мес/);
   assert.match(html, /Подписка в рублях с НДС 22%<\/span><span class='tv'>12 200 ₽\/мес · 146 400 ₽\/год/);
   assert.match(html, /Чистая экономия первого года<\/span><span class='tv'>843 602 ₽/);
