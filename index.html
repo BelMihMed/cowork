@@ -354,6 +354,8 @@
   .method-note{margin-top:28px;background:var(--panel);border-radius:22px;padding:20px 24px}
   .method-note h2{margin:0 0 10px;font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:17px}
   .method-note p{margin:0 0 10px;font-size:14px;line-height:1.6;color:var(--muted)} .method-note p:last-child{margin-bottom:0}
+  .rm-sum .trow{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px;color:var(--muted)}
+  .rm-sum .trow b{color:var(--ink);text-align:right} .rm-sum small{font-weight:600;color:var(--muted)}
   .copied{margin-top:10px;text-align:center;font-size:13px;font-weight:700;color:#8ef0c6}
   .copy-fallback{margin-top:10px;width:100%;min-height:140px;border:1px solid rgba(255,255,255,.28);border-radius:12px;background:rgba(0,0,0,.25);color:#fff;font:12.5px/1.5 'JetBrains Mono',monospace;padding:10px}
   .sp-note{margin:12px 0 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6)}
@@ -439,7 +441,7 @@
       </div>
 
       <div class="sp-actions">
-        <button type="button" class="dl-btn" id="dl-btn" disabled title="PDF-отчёт появится на следующем этапе">
+        <button type="button" class="dl-btn" id="dl-btn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Скачать результат (PDF)
         </button>
@@ -1037,6 +1039,124 @@ function buildSummaryText(res, tariff, sub, econ, company, opts){
 }
 // @cw:end
 
+// @cw:report
+/* ---------- PDF-отчёт (T13, ТЗ §5.1): «эффект → компания → задачи → затраты и тариф → методика → CTA» ----------
+   Чистая функция: всё, что нужно от страницы (название компании, логотип, дата), приходит в opts. */
+const CTA_COWORK_SELF = "https://helpdesk.bitrix24.ru/open/28844790/";   // инструкция: как подключить и работать в Коворк/Код
+const CTA_COWORK_HELP = "https://vibecode.bitrix24.tech/cowork";         // заявка на ранний доступ (см. COWORK-DATA.md)
+const REPORT_EXTRA_CSS = ""
+  + ".tt{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:4px}"
+  + ".tt th,.tt td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}"
+  + ".tt th{font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}"
+  + ".tt td.n,.tt th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}"
+  + ".tt td.t{font-weight:700} .tt td .p{display:block;font-weight:400;color:var(--muted);font-size:8.5pt}"
+  + ".tt tr.sum td{border-bottom:0;border-top:2px solid var(--ink);font-weight:800}"
+  + ".rates{margin-top:8px;font-size:9pt;color:var(--muted)}"
+  + ".rates b{color:var(--ink);font-weight:700}";
+
+function buildCoworkReportHtml(calc, opts){
+  const o = opts || {};
+  const {res, tariff, sub, econ, company} = calc;
+  const escR = s => String(s == null ? "" : s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const dateStr = o.date || new Date().toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"});
+  const SITE = (o.url || PAGE_URL).replace(/^https?:\/\//,"").replace(/\/$/,"");
+  const LOGO = o.logo || "";
+  const fmtCompact = v => { v = Math.round(v); if(v>=1e9) return (v/1e9).toFixed(1).replace(".",",")+" млрд ₽"; if(v>=1e6) return (v/1e6).toFixed(1).replace(".",",")+" млн ₽"; if(v>=1e4) return Math.round(v/1e3)+" тыс ₽"; return groupFmt(String(v))+" ₽"; };
+  const approx = v => "≈ " + fmtCompact(v);
+  const days = (Math.round(res.days*10)/10).toLocaleString("ru-RU");
+  const period = periodByMonths(tariff.months);
+  const companyLine = o.companyName ? "<div class='co'>"+escR(o.companyName)+"</div>" : "";
+
+  // 1) главное число — освобождённые часы в месяц (с коэффициентом) и чистая экономия первого года
+  const hero = "<section><div class='hero'>"
+    + "<div class='hl'>Освободится в месяц с учётом реализуемости</div>"
+    + "<div class='hnum'>"+fmtHours(res.totalHours)+"</div>"
+    + "<div class='hm'>из "+fmtHours(res.totalRawHours)+" освобождённых · ≈ "+days+" рабочих дней · стоимость времени "+fmtMoney(res.totalFot)+" / мес</div>"
+    + (econ.netFirstYear > 0
+        ? "<div class='hv'><svg viewBox='0 0 24 24' fill='none' stroke='var(--green)' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='width:17px;height:17px'><path d='M20 6 9 17l-5-5'/></svg>"
+          + "<span>Чистая экономия первого года <b class='v'>"+approx(econ.netFirstYear)+"</b> — подписка окупается за "+econ.paybackDays+" раб. дн. месяца</span></div>"
+        : (econ.subscriptionMonth > 0 ? "<div class='hv'><span>Пока экономия ("+fmtMoney(res.totalFot)+" / мес) меньше подписки ("+fmtMoney(econ.subscriptionMonth)+" / мес)</span></div>" : ""))
+    + "</div></section>";
+  const takeaway = res.items.length
+    ? "<div class='takeaway'><b>Что это значит:</b> Коворк/Код снимает около <b>"+fmtHours(res.totalHours)+" в месяц</b> ручной работы"
+      + (res.fte >= 0.5 ? " — это примерно <b>"+(Math.round(res.fte*10)/10).toLocaleString("ru-RU")+" сотрудника</b> на полной ставке" : "")
+      + ". Освободившееся время уходит на клиентов, продажи и решения, а не на сборку отчётов руками.</div>"
+    : "";
+
+  // 2) компания: люди, оклады и ставки часа по ролям
+  const cells = [
+    ["Сотрудников всего", groupFmt(String(num(company.empCount)))+" чел."], ["Средняя ЗП", fmtMoney(num(company.empSal))+"/мес"],
+    ["Менеджеров по продажам", groupFmt(String(num(company.mgrCount)))+" чел."], ["ЗП менеджера", fmtMoney(num(company.mgrSal))+"/мес"],
+    ["Руководителей", groupFmt(String(num(company.ropCount)))+" чел."], ["ЗП руководителя", fmtMoney(num(company.ropSal))+"/мес"],
+  ];
+  const coGrid = "<div class='co-grid'>" + cells.map(c=>"<div class='co-cell'><div class='cl'>"+c[0]+"</div><div class='cv'>"+c[1]+"</div></div>").join("") + "</div>"
+    + "<div class='rates'>Стоимость часа (оклад × 1,4 ÷ 176): " + Object.values(ROLES).map(r=> r.name+" <b>"+fmtMoney(costHour(num(company[r.sal])))+"/ч</b>").join(" · ") + "</div>";
+
+  // 3) задачи: таблица
+  const rows = res.items.slice().sort((x,y)=>y.r.hours - x.r.hours).map(it=>{
+    const v = state[it.task.id].values;
+    return "<tr><td class='t'>"+escR(it.task.n)+"<span class='p'>"+escR(it.task.p)+"</span></td>"
+      + "<td class='n'>"+fmtMin(num(v.b))+"</td><td class='n'>"+fmtMin(num(v.a))+"</td>"
+      + "<td class='n'>"+num(v.f)+" "+(PERIOD_LABEL[v.u]||"")+"</td><td class='n'>"+num(v.c)+"</td>"
+      + "<td class='n'>"+fmtHours(it.r.hours)+" <span style='color:var(--muted);font-weight:400'>×"+fmtPct(it.r.real)+"</span></td>"
+      + "<td class='n'>"+fmtMoney(it.r.fot)+"</td></tr>";
+  }).join("");
+  const table = "<table class='tt'><thead><tr><th>Задача</th><th class='n'>Сейчас</th><th class='n'>С Коворком</th><th class='n'>Как часто</th><th class='n'>Людей</th><th class='n'>Часов / мес</th><th class='n'>₽ / мес</th></tr></thead>"
+    + "<tbody>"+rows+"<tr class='sum'><td>Итого</td><td></td><td></td><td></td><td></td><td class='n'>"+fmtHours(res.totalHours)+"</td><td class='n'>"+fmtMoney(res.totalFot)+"</td></tr></tbody></table>"
+    + "<div class='rates'>Часов / мес — с учётом коэффициента реализуемости (указан рядом); без него освобождается "+fmtHours(res.totalRawHours)+".</div>";
+
+  // 4) затраты и тариф
+  const costRows = "<div class='trow'><span>Тариф Коворк/Код — «"+tariff.chosen.name+"»"+(tariff.seats>1 ? ", подписок: "+tariff.seats : "")
+      + (period.months > 1 ? ", оплата за "+period.months+" мес (скидка "+Math.round(period.discount*100)+"%)" : ", оплата помесячно")+"</span>"
+      + "<span class='tv'>"+(sub.vibesMonth ? fmtInt(sub.vibesMonth)+" Ꝟ/мес" : "бесплатно")+"</span></div>"
+    + "<div class='trow'><span>Подписка в рублях с НДС "+Math.round(COWORK_PRICE_CONFIG.vat*100)+"%</span><span class='tv'>"+fmtMoney(sub.grossMonth)+"/мес · "+fmtMoney(sub.grossYear)+"/год</span></div>"
+    + "<div class='trow'><span>Стоимость освобождённого времени</span><span class='tv'>"+fmtMoney(res.totalFot)+"/мес · "+fmtMoney(econ.fotYear)+"/год</span></div>"
+    + "<div class='trow total'><span>Чистая экономия первого года</span><span class='tv'>"+fmtMoney(econ.netFirstYear)+"</span></div>";
+  const recText = tierWhy(tariff.rec, tariff.manual ? tariff.chosen.id : null)
+    + (thresholdsAreEstimate() ? " Пороги тарифов — ориентир до подтверждения продуктом." : "")
+    + " " + COWORK_PRICE_CONFIG.requires;
+
+  // 5) CTA — инструкция и заявка с QR (ссылки — рабочие значения из COWORK-DATA.md)
+  const shortUrl = u => u.replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/$/,"");
+  const ctaCard = (url, primary, title, text, btn, cap) => !url ? "" :
+    "<div class='cta-card"+(primary?" primary":"")+"'>"
+    + "<div class='cta-h'><span class='cta-i"+(primary?"":" alt")+"'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
+    + (primary ? "<path d='M13 2 3 14h7l-1 8 10-12h-7z'/>" : "<path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/>")+"</svg></span>"+title+"</div>"
+    + "<div class='cta-p'>"+text+"</div>"
+    + "<a class='cta-btn"+(primary?"":" sec")+"' href='"+url+"' target='_blank' rel='noopener'>"+btn+"</a>"
+    + "<div class='cta-url'>"+shortUrl(url)+"</div>"
+    + "<div class='cta-qr'><span class='qrbox'>"+makeQrSvg(url)+"</span><span class='cta-cap'>"+cap+"</span></div></div>";
+  const cta = (CTA_COWORK_SELF || CTA_COWORK_HELP)
+    ? "<section class='cta-sec'><p class='sec-eyebrow'>Как начать работать с Коворк/Код</p><div class='cta-grid'>"
+      + ctaCard(CTA_COWORK_SELF, true, "Подключить самостоятельно", "Скачайте приложение в разделе «AI и агенты → Коворк/Код», подключите его к своему Битрикс24 и начните с бесплатного тарифа.", "Открыть инструкцию", "Наведите камеру телефона — откроется инструкция")
+      + ctaCard(CTA_COWORK_HELP, false, "Получить ранний доступ", "Оставьте заявку на платформе Вайбкод — команда Битрикс24 подключит Коворк/Код и поможет с первыми задачами.", "Оставить заявку", "Скан — откроется форма заявки")
+      + "</div></section>"
+    : "";
+
+  return "<!DOCTYPE html><html lang='ru'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+    + "<title>Коворк/Код — часы и деньги" + (o.companyName ? " — " + escR(o.companyName) : "") + "</title>"
+    + "<link rel='preconnect' href='https://fonts.googleapis.com'><link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>"
+    + "<link href='https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap' rel='stylesheet'>"
+    + "<style>" + REPORT_CSS + REPORT_EXTRA_CSS + "</style></head><body>"
+    + "<div class='sheet'><div class='spectrum'></div>"
+    + "<header>"+companyLine+"<div class='brandline'>"
+    + (LOGO ? "<img class='logo' src='"+LOGO+"' alt=''>" : "<span class='logo'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v18M3 12h18'/></svg></span>")
+    + "<span class='bt'>Bitrix24 · Коворк/Код · Часы и деньги</span></div>"
+    + "<h1 class='wordmark'>Сколько часов вернёт Коворк/Код</h1>"
+    + "<div class='meta'>Отчёт сформирован "+dateStr+" · тариф «"+tariff.chosen.name+"»"+(tariff.seats>1 ? " × "+tariff.seats : "")+" · задач: "+res.items.length+"</div></header>"
+    + hero + takeaway
+    + "<section><p class='sec-eyebrow'>Данные о компании</p>"+coGrid+"</section>"
+    + "<section><p class='sec-eyebrow'>Задачи и освобождённые часы</p>"+table+"</section>"
+    + "<section><p class='sec-eyebrow'>Затраты и тариф</p><div class='tot'>"+costRows+"</div><div class='rec'>"+recText+"</div></section>"
+    + "<section><p class='sec-eyebrow'>Методика</p>"+METHOD_NOTE+"</section>"
+    + cta
+    + "<div class='ft'>Расчёт носит оценочный характер. Налоговая модель упрощённая (оклад на руки × 1,4); стоимость часа = оклад × 1,4 ÷ 176. "+priceDateText()+" 1 вайб = 1 ₽ без НДС.</div>"
+    + "<div class='ft-site'>Рассчитано на "+SITE+"</div></div>"
+    + "<div class='runfoot'><span>Коворк/Код · Часы и деньги</span><span>"+dateStr+" · "+SITE+"</span></div>"
+    + "</body></html>";
+}
+// @cw:end
+
 /* ---------- Связка модели со страницей: интерфейс задач (T8); панель итога — T10 ---------- */
 // значения блока «Данные о компании» → {empCount, empSal, mgrCount, mgrSal, ropCount, ropSal}
 function readCompany(){
@@ -1370,6 +1490,50 @@ function copySummary(){
 }
 $("copy-btn").addEventListener("click", copySummary);
 $("copy-fallback").addEventListener("blur", ()=>{ $("copy-fallback").hidden = true; });
+
+/* ---------- Модалка перед отчётом и открытие предпросмотра (T13) ---------- */
+const reportModal = document.createElement("div");
+reportModal.className = "modal-overlay"; reportModal.hidden = true;
+reportModal.innerHTML = "<div class='modal' role='dialog' aria-labelledby='rm-title'>"
+  + "<button type='button' class='modal-x' id='rm-x' aria-label='Закрыть'>×</button>"
+  + "<h3 id='rm-title'>Отчёт в PDF</h3>"
+  + "<p class='msub'>Проверьте тариф, срок оплаты и число подписок — они попадут в отчёт. Изменить можно в панели итога.</p>"
+  + "<div class='modal-field'><label for='rm-company'>Название компании <span style='opacity:.6'>(для отчёта)</span></label><input type='text' id='rm-company' maxlength='80' placeholder='Например, ООО «Ромашка»'></div>"
+  + "<div class='rm-sum' id='rm-sum'></div>"
+  + "<div class='price-date' id='rm-date'></div>"
+  + "<div class='modal-actions'><button type='button' class='btn-secondary' id='rm-cancel'>Отмена</button><button type='button' class='btn-primary' id='rm-ok'>Сформировать отчёт</button></div>"
+  + "</div>";
+document.querySelector(".wrap").appendChild(reportModal);
+function openReportModal(){
+  if(!lastCalc || !lastCalc.res.items.length) return;
+  const {tariff, sub} = lastCalc, period = periodByMonths(tariff.months);
+  $("rm-company").value = ($("company-name").value || "").trim();
+  $("rm-sum").innerHTML = "<div class='trow'><span>Тариф</span><b>"+tariff.chosen.name+(tariff.manual ? " <small>(по задачам подходит "+tariff.rec.tier.name+")</small>" : "")+"</b></div>"
+    + "<div class='trow'><span>Оплата</span><b>"+(period.months > 1 ? "за "+period.months+" мес, скидка "+Math.round(period.discount*100)+"%" : "помесячно")+"</b></div>"
+    + "<div class='trow'><span>Подписок</span><b>"+tariff.seats+"</b></div>"
+    + "<div class='trow'><span>Подписка в месяц с НДС</span><b>"+fmtMoney(sub.grossMonth)+"</b></div>";
+  $("rm-date").textContent = priceDateText();
+  reportModal.hidden = false;
+  setTimeout(()=>{ $("rm-company").focus(); }, 30);
+}
+function closeReportModal(){ reportModal.hidden = true; }
+function openCoworkReport(){
+  if(!lastCalc) return;
+  const companyName = ($("rm-company").value || "").trim();
+  if($("company-name").value.trim() !== companyName) $("company-name").value = companyName;
+  const logo = (document.querySelector("link[rel='icon'][sizes='32x32']") || {}).href || "";
+  closeReportModal();
+  showReportHtml(buildCoworkReportHtml(lastCalc, {companyName, logo, url: PAGE_URL}));
+  if(typeof logCoworkReport === "function") logCoworkReport(companyName);   // аналитика — T14
+  saveState();
+}
+$("dl-btn").addEventListener("click", openReportModal);
+$("rm-x").addEventListener("click", closeReportModal);
+$("rm-cancel").addEventListener("click", closeReportModal);
+$("rm-ok").addEventListener("click", openCoworkReport);
+$("rm-company").addEventListener("keydown", e=>{ if(e.key==="Enter") openCoworkReport(); });
+reportModal.addEventListener("click", e=>{ if(e.target===reportModal) closeReportModal(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeReportModal(); });
 
 // ключ → заголовок и текст модалки «i» (блок info-modal ядра делегирует сюда клики по .info-btn)
 function openInfo(key){
