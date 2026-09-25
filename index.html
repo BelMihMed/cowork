@@ -282,15 +282,77 @@
   .prompt{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);background:var(--cw-accent-soft);border-radius:12px;padding:11px 14px}
   .prompt b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cw-accent-ink);margin-bottom:4px}
 
-  /* панель итога (каркас; содержимое — T10) */
-  .summary-panel{color:#fff;border:0;border-radius:26px;padding:26px 28px;
+  /* панель итога (T10) */
+  .summary-panel{color:#fff;border:0;border-radius:26px;padding:24px 24px 22px;
     background:linear-gradient(135deg,hsl(258,52%,22%),hsl(226,55%,25%),hsl(190,52%,23%));
     box-shadow:0 20px 54px rgba(30,24,70,.28)}
-  .summary-panel h2{margin:0 0 12px;font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:18px;color:#fff}
+  .summary-panel h2{margin:0 0 6px;font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:17px;color:#fff}
+  .summary-panel h3{margin:18px 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.55);font-weight:700}
   .summary-panel .empty{color:rgba(255,255,255,.82);font-size:14.5px;line-height:1.55}
-  .summary-panel .empty b{color:#fff}
-  .stage-note{background:var(--cw-accent-soft);color:var(--cw-accent-ink);border-radius:14px;padding:13px 18px;font-size:14px;line-height:1.5}
-  .stage-note b{font-weight:800}
+  .sp-hours{font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:clamp(30px,5vw,40px);line-height:1.1;letter-spacing:-.01em;
+    background:linear-gradient(90deg,#c7b8ff,#86ecd6);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sp-sub{margin-top:6px;font-size:13px;color:rgba(255,255,255,.7);line-height:1.5}
+  .sp-sub b{color:#fff;font-weight:700}
+  .sp-block{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14)}
+  .tiers-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .tiers-head .h{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.55);font-weight:700}
+  .est-note{font-size:11px;font-weight:700;color:#ffcf9e;background:rgba(255,207,158,.14);border-radius:20px;padding:3px 9px}
+  .tiers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .tier{position:relative;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:10px 6px 9px;
+    font:inherit;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:3px;min-width:0;transition:background-color .15s,border-color .15s}
+  .tier:hover{background:rgba(255,255,255,.11)}
+  .tier[aria-checked="true"]{background:#fff;color:var(--ink);border-color:#fff}
+  .tier .tn{font-size:12px;font-weight:800;letter-spacing:.02em}
+  .tier .tp{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tier .tv{font-size:10.5px;color:rgba(255,255,255,.6);white-space:nowrap}
+  .tier[aria-checked="true"] .tv{color:var(--muted)}
+  .tier .rec{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    color:#0e6e5c;background:#8ef0c6;border-radius:20px;padding:2px 7px;white-space:nowrap}
+  .tier::before{content:"";position:absolute;left:10px;right:10px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--tier-c,transparent)}
+  .why{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.78)}
+  .linkbtn{background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:700;color:#8ef0c6;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .linkbtn:hover{color:#fff}
+  .sp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-size:13px;color:rgba(255,255,255,.78)}
+  .period{display:inline-flex;gap:3px;background:rgba(255,255,255,.08);border-radius:12px;padding:3px}
+  .period button{font:inherit;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);background:transparent;border:0;border-radius:9px;padding:6px 9px;cursor:pointer}
+  .period button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+  .seats-in{display:inline-flex;align-items:center;background:rgba(255,255,255,.08);border-radius:12px;border:1.5px solid transparent}
+  .seats-in:focus-within{border-color:#8ef0c6;background:rgba(255,255,255,.12)}
+  .seats-in input{width:64px;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:14px;font-weight:700;padding:7px 4px 7px 12px;text-align:right;font-variant-numeric:tabular-nums}
+  .seats-in .suf{font-size:12px;color:rgba(255,255,255,.6);padding:0 12px 0 4px;font-family:'JetBrains Mono',monospace}
+  .m-grid{display:grid;grid-template-columns:1fr auto auto;gap:8px 16px;align-items:baseline}
+  .m-grid .h{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5);font-weight:700;text-align:right}
+  .m-grid .lbl{font-size:13.5px;color:rgba(255,255,255,.82)}
+  .m-grid .num{font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .m-grid .cost .lbl{color:rgba(255,255,255,.7)} .m-grid .cost .num,.m-grid .num.cost{color:#ffcf9e;font-weight:600}
+  .m-grid .net .lbl{font-weight:800;color:#fff}
+  .m-grid .net .num{font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:16px;background:linear-gradient(90deg,#c7b8ff,#86ecd6);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .m-grid .net.negative .num{background:none;-webkit-background-clip:initial;background-clip:initial;color:#ffcf9e}
+  .m-line{grid-column:1/-1;height:1px;background:rgba(255,255,255,.14);margin:2px 0}
+  .verdict{margin-top:14px;display:flex;align-items:flex-start;gap:9px;background:rgba(120,230,190,.16);border:1px solid rgba(160,240,205,.38);border-radius:14px;padding:11px 14px;font-size:13.5px;line-height:1.5;color:#eafff7}
+  .verdict svg{width:18px;height:18px;color:#8ef0c6;flex:none;margin-top:1px}
+  .verdict.negative{background:rgba(255,207,158,.12);border-color:rgba(255,207,158,.35);color:#fff3e3}
+  .verdict.negative svg{color:#ffcf9e}
+  .bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .bars li{display:grid;gap:4px}
+  .bars .lab{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:rgba(255,255,255,.85)}
+  .bars .lab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bars .lab b{color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bars .track{height:6px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}
+  .bars .fill{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#c7b8ff,#86ecd6)}
+  .sp-actions{display:grid;gap:8px;margin-top:18px}
+  .dl-btn{width:100%;padding:13px;border:0;border-radius:14px;cursor:pointer;font-family:Manrope,sans-serif;font-size:15px;font-weight:800;color:hsl(232,55%,40%);background:#fff;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background-color .15s}
+  .dl-btn svg{width:18px;height:18px}
+  .dl-btn:hover:not(:disabled){background:#eef1ff}
+  .dl-btn:disabled{opacity:.5;cursor:not-allowed}
+  .copy-btn{width:100%;padding:11px;border:1px solid rgba(255,255,255,.28);border-radius:14px;cursor:pointer;font-family:Manrope,sans-serif;font-size:14px;font-weight:700;color:#fff;background:rgba(255,255,255,.06);
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background-color .15s}
+  .copy-btn:hover:not(:disabled){background:rgba(255,255,255,.14)}
+  .copy-btn:disabled{opacity:.5;cursor:not-allowed}
+  .copy-btn svg{width:16px;height:16px}
+  .sp-note{margin:12px 0 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6)}
+  @media(max-width:420px){.tiers{grid-template-columns:repeat(2,minmax(0,1fr))}.m-grid{grid-template-columns:1fr auto;gap:6px 12px}.m-grid .h.year,.m-grid .num.year{display:none}}
 </style>
 </head>
 <body>
@@ -347,7 +409,41 @@
     <div class="groups" id="groups"></div>
     <aside class="summary-panel" id="summary" aria-live="polite">
       <h2>Вы освободите в месяц</h2>
-      <div id="summary-body"><p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p></div>
+      <div class="sp-hours" id="sp-hours">0 ч</div>
+      <div class="sp-sub" id="sp-sub">Отметьте задачи, которые делаете руками, — калькулятор посчитает часы, деньги и подходящий тариф.</div>
+
+      <div class="sp-block">
+        <div class="tiers-head"><span class="h">Тариф Коворк/Код</span><span class="est-note" id="tier-est" title="Пороги тарифов не подтверждены продуктом">ориентир</span></div>
+        <div class="tiers" id="tiers" role="radiogroup" aria-label="Тариф Коворк/Код"></div>
+        <p class="why" id="tier-why"></p>
+        <button type="button" class="linkbtn" id="tier-auto" hidden>Подобрать по задачам</button>
+        <div class="sp-row"><span>Оплата</span><div class="period" id="period" role="group" aria-label="Срок оплаты"></div></div>
+        <div class="sp-row"><label for="seats">Подписок <span id="seats-hint"></span></label>
+          <span><span class="seats-in"><input id="seats" type="text" inputmode="numeric" value="1" aria-describedby="seats-hint"><span class="suf">шт.</span></span>
+          <button type="button" class="linkbtn" id="seats-auto" hidden style="margin-left:8px">сбросить</button></span></div>
+      </div>
+
+      <div class="sp-block">
+        <div class="m-grid" id="money"></div>
+        <div class="verdict" id="verdict" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span id="verdict-text"></span></div>
+      </div>
+
+      <div class="sp-block" id="top-block" hidden>
+        <h3 style="margin-top:0">Где вы сэкономите больше всего</h3>
+        <ul class="bars" id="bars"></ul>
+      </div>
+
+      <div class="sp-actions">
+        <button type="button" class="dl-btn" id="dl-btn" disabled title="PDF-отчёт появится на следующем этапе">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Скачать результат (PDF)
+        </button>
+        <button type="button" class="copy-btn" id="copy-btn" disabled title="Копирование расчёта появится на следующем этапе">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Скопировать расчёт
+        </button>
+      </div>
+      <p class="sp-note">Покажите расчёт руководителю или коллегам: цифры считаются по вашим окладам и задачам, коэффициент реализуемости уже учтён.</p>
     </aside>
   </div>
 
@@ -1062,6 +1158,98 @@ document.querySelectorAll(".navbar .chip").forEach(btn=>{
 });
 $("reset-btn").addEventListener("click", resetAll);
 
+/* ---------- Панель итога (T10, ТЗ §4.3) ---------- */
+function renderTiers(){
+  $("tiers").innerHTML = COWORK_PRICE_CONFIG.tiers.map(t=>
+    '<button type="button" class="tier" role="radio" aria-checked="false" tabindex="-1" data-t="'+t.id+'" style="--tier-c:'+t.color+'">'
+    + '<span class="tn">'+t.name+'</span><span class="tp" data-out="price"></span><span class="tv" data-out="vibes"></span></button>').join("");
+  $("period").innerHTML = COWORK_PRICE_CONFIG.periods.map(p=>
+    '<button type="button" data-m="'+p.months+'" aria-pressed="false">'+p.months+' мес'+(p.discount ? ' −'+Math.round(p.discount*100)+'%' : '')+'</button>').join("");
+  $("tier-est").hidden = !thresholdsAreEstimate();
+}
+function renderPanel(res, tariff, sub, econ){
+  const any = res.items.length > 0;
+  $("sp-hours").textContent = fmtHours(res.totalHours);
+  $("sp-sub").innerHTML = any
+    ? 'из <b>' + fmtHours(res.totalRawHours) + '</b> освобождённых, с учётом реализуемости · ≈ <b>' + (Math.round(res.days*10)/10).toLocaleString("ru-RU") + '</b> '
+      + plural(Math.round(res.days), ["рабочий день","рабочих дня","рабочих дней"])
+      + (res.fte >= 1 ? ', как ещё <b>' + (Math.round(res.fte*10)/10).toLocaleString("ru-RU") + '</b> сотрудника на полной ставке' : '')
+    : 'Отметьте задачи, которые делаете руками, — калькулятор посчитает часы, деньги и подходящий тариф.';
+
+  // тарифы: цена одной подписки в месяц с НДС для выбранного периода, второй строкой — вайбы
+  const period = periodByMonths(tariff.months);
+  document.querySelectorAll("#tiers .tier").forEach(b=>{
+    const one = subscriptionCost(b.dataset.t, period.months, 1);
+    const isChosen = b.dataset.t === tariff.chosen.id;
+    b.setAttribute("aria-checked", String(isChosen));
+    b.tabIndex = isChosen ? 0 : -1;
+    b.querySelector('[data-out="price"]').textContent = one.grossMonth ? fmtMoney(one.grossMonth) : "0 ₽";
+    b.querySelector('[data-out="vibes"]').textContent = one.tier.vibes ? fmtInt(one.vibesMonth) + " Ꝟ/мес" : "бесплатно";
+    let rec = b.querySelector(".rec");
+    if(any && b.dataset.t === tariff.rec.tier.id){ if(!rec){ rec = document.createElement("span"); rec.className = "rec"; rec.textContent = "подходит"; b.appendChild(rec); } }
+    else if(rec) rec.remove();
+  });
+  $("tier-why").textContent = tierWhy(tariff.rec, tariff.manual ? tariff.chosen.id : null);
+  $("tier-auto").hidden = !tariff.manual;
+  document.querySelectorAll("#period button").forEach(b=> b.setAttribute("aria-pressed", String(Number(b.dataset.m) === tariff.months)));
+  const seatsEl = $("seats");
+  if(document.activeElement !== seatsEl) seatsEl.value = String(tariff.seats);
+  $("seats-auto").hidden = !pricing.seatsManual;
+  $("seats-hint").textContent = pricing.seatsManual ? "" : "(по числу людей)";
+
+  // деньги: месяц и первый год
+  const negative = econ.netMonth < 0;
+  $("money").innerHTML = '<span></span><span class="h">Месяц</span><span class="h year">Первый год</span>'
+    + '<span class="lbl">Стоимость времени</span><span class="num">' + fmtMoney(res.totalFot) + '</span><span class="num year">' + fmtMoney(econ.fotYear) + '</span>'
+    + '<span class="lbl cost">Подписка ' + tariff.chosen.name + (tariff.seats > 1 ? ' × ' + tariff.seats : '') + (period.discount ? ', −' + Math.round(period.discount*100) + '%' : '') + '</span>'
+    + '<span class="num cost">− ' + fmtMoney(econ.subscriptionMonth) + '</span><span class="num cost year">− ' + fmtMoney(econ.subscriptionYear) + '</span>'
+    + '<span class="m-line"></span>'
+    + '<span class="lbl net' + (negative ? ' negative' : '') + '">Чистая экономия</span>'
+    + '<span class="num net' + (negative ? ' negative' : '') + '">' + fmtMoney(econ.netMonth) + '</span><span class="num net year' + (negative ? ' negative' : '') + '">' + fmtMoney(econ.netFirstYear) + '</span>';
+  // .net на span-ах: перекрасим через классы контейнера-ячейки
+  document.querySelectorAll("#money .num.net").forEach(el=>{ el.style.background = negative ? "none" : ""; el.style.color = negative ? "#ffcf9e" : ""; el.style.webkitTextFillColor = negative ? "#ffcf9e" : ""; });
+
+  const v = $("verdict");
+  v.hidden = !any;
+  v.classList.toggle("negative", any && econ.netMonth <= 0);
+  $("verdict-text").textContent = verdictText(res, econ);
+
+  // где экономия больше всего — до 6 задач
+  const top = res.items.slice().sort((x,y)=>y.r.hours - x.r.hours).slice(0, 6);
+  $("top-block").hidden = !top.length;
+  const mx = top.length ? Math.max(top[0].r.hours, 0.001) : 1;
+  $("bars").innerHTML = top.map(it=>'<li><span class="lab"><span>'+esc(it.task.n)+'</span><b>'+fmtHours(it.r.hours)+'</b></span>'
+    + '<span class="track"><span class="fill" style="width:'+(it.r.hours/mx*100).toFixed(1)+'%"></span></span></li>').join("");
+
+  $("dl-btn").disabled = !any || typeof buildCoworkReportHtml !== "function";
+  $("copy-btn").disabled = !any || typeof copySummary !== "function";
+}
+
+// события панели: тариф вручную (мышь и стрелки), период, подписки, сброс к автоподбору
+$("tiers").addEventListener("click", e=>{
+  const b = e.target.closest(".tier"); if(!b) return;
+  pricing.tierSel = b.dataset.t; sessTouch(); recompute();
+});
+$("tiers").addEventListener("keydown", e=>{
+  const keys = {ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1};
+  if(!(e.key in keys)) return;
+  e.preventDefault();
+  const tiers = COWORK_PRICE_CONFIG.tiers, cur = tierIndex(currentTierId());
+  const next = tiers[(cur + keys[e.key] + tiers.length) % tiers.length];
+  pricing.tierSel = next.id; sessTouch(); recompute();
+  const btn = document.querySelector('#tiers .tier[data-t="'+next.id+'"]'); if(btn) btn.focus();
+});
+function currentTierId(){ const c = document.querySelector('#tiers .tier[aria-checked="true"]'); return c ? c.dataset.t : COWORK_PRICE_CONFIG.tiers[0].id; }
+$("tier-auto").addEventListener("click", ()=>{ pricing.tierSel = null; sessTouch(); recompute(); });
+$("period").addEventListener("click", e=>{
+  const b = e.target.closest("button[data-m]"); if(!b) return;
+  pricing.period = Number(b.dataset.m); sessTouch(); recompute();
+});
+$("seats").addEventListener("input", e=>{
+  pricing.seatsManual = true; pricing.seats = Math.max(1, Math.round(onNumInput(e.target))); sessTouch(); recompute();
+});
+$("seats-auto").addEventListener("click", ()=>{ pricing.seatsManual = false; sessTouch(); recompute(); });
+
 // ключ → заголовок и текст модалки «i» (блок info-modal ядра делегирует сюда клики по .info-btn)
 function openInfo(key){
   const t = $("info-title");
@@ -1083,7 +1271,7 @@ function openInfo(key){
   infoModal.hidden = false;
 }
 
-// главный пересчёт: задачи → тариф и подписки → финмодель; карточки, навбар, панель итога (краткая сводка до T10)
+// главный пересчёт: задачи → тариф и подписки → финмодель; карточки, навбар, панель итога
 function recompute(){
   const company = readCompany();
   const res = computeAll(company);
@@ -1100,17 +1288,7 @@ function recompute(){
   $("nav-total").innerHTML = res.items.length
     ? "Освободится: <b>" + fmtHours(res.totalHours) + "/мес</b> · <b>" + fmtMoney(res.totalFot) + "/мес</b>" : "";
 
-  const body = $("summary-body");
-  if(!res.items.length){
-    body.innerHTML = '<p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p>';
-    return;
-  }
-  body.innerHTML = '<p class="empty">Освобождается <b>' + fmtHours(res.totalRawHours) + '</b> в месяц, в результат уходит <b>'
-    + fmtHours(res.totalHours) + '</b> — это ' + (Math.round(res.days*10)/10).toLocaleString("ru-RU")
-    + ' рабочих дней. Стоимость этого времени: <b>' + fmtMoney(res.totalFot) + '</b> в месяц.</p>'
-    + '<p class="empty">Подходит тариф <b>' + tariff.rec.tier.name + '</b>' + (tariff.seats > 1 ? ' × ' + tariff.seats : '') + ': '
-    + fmtMoney(sub.grossMonth) + ' в месяц с НДС. Чистая экономия <b>' + fmtMoney(econ.netMonth) + '</b> в месяц, за первый год '
-    + fmtMoney(econ.netFirstYear) + '. ' + verdictText(res, econ) + '</p>';
+  renderPanel(res, tariff, sub, econ);
 }
 function plural(n, forms){ const n10 = n % 10, n100 = n % 100; if(n10===1 && n100!==11) return forms[0]; if(n10>=2 && n10<=4 && (n100<10 || n100>=20)) return forms[1]; return forms[2]; }
 $("price-date").textContent = priceDateText();
@@ -1246,6 +1424,7 @@ document.addEventListener("click", e=>{
 
 renderPresets();
 renderGroups();
+renderTiers();
 choosePreset(DEFAULT_PRESET);   // стартовый пресет (T11 будет восстанавливать сохранённое состояние)
 </script>
 </body>
