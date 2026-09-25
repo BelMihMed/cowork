@@ -351,6 +351,11 @@
   .copy-btn:hover:not(:disabled){background:rgba(255,255,255,.14)}
   .copy-btn:disabled{opacity:.5;cursor:not-allowed}
   .copy-btn svg{width:16px;height:16px}
+  .method-note{margin-top:28px;background:var(--panel);border-radius:22px;padding:20px 24px}
+  .method-note h2{margin:0 0 10px;font-family:Unbounded,Manrope,sans-serif;font-weight:800;font-size:17px}
+  .method-note p{margin:0 0 10px;font-size:14px;line-height:1.6;color:var(--muted)} .method-note p:last-child{margin-bottom:0}
+  .copied{margin-top:10px;text-align:center;font-size:13px;font-weight:700;color:#8ef0c6}
+  .copy-fallback{margin-top:10px;width:100%;min-height:140px;border:1px solid rgba(255,255,255,.28);border-radius:12px;background:rgba(0,0,0,.25);color:#fff;font:12.5px/1.5 'JetBrains Mono',monospace;padding:10px}
   .sp-note{margin:12px 0 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6)}
   @media(max-width:420px){.tiers{grid-template-columns:repeat(2,minmax(0,1fr))}.m-grid{grid-template-columns:1fr auto;gap:6px 12px}.m-grid .h.year,.m-grid .num.year{display:none}}
 </style>
@@ -438,15 +443,22 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Скачать результат (PDF)
         </button>
-        <button type="button" class="copy-btn" id="copy-btn" disabled title="Копирование расчёта появится на следующем этапе">
+        <button type="button" class="copy-btn" id="copy-btn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Скопировать расчёт
         </button>
       </div>
+      <div class="copied" id="copied" hidden role="status">Расчёт скопирован</div>
+      <textarea id="copy-fallback" class="copy-fallback" hidden aria-label="Текст расчёта — скопируйте вручную" readonly></textarea>
       <p class="sp-note">Покажите расчёт руководителю или коллегам: цифры считаются по вашим окладам и задачам, коэффициент реализуемости уже учтён.</p>
     </aside>
   </div>
 
+  <section class="method-note" id="method" aria-labelledby="method-title">
+    <h2 id="method-title">Как считается</h2>
+    <p>Для каждой задачи берём разницу между «сейчас» и «с Коворком» в минутах, умножаем на частоту в месяц и число людей — это освобождённые часы. Не всё освобождённое время превращается в результат: по исследованию NBER «Time Savings When Working from Home» (2023, 27 стран) в основную работу уходит около 40% сэкономленного времени. Поэтому у каждой задачи свой коэффициент реализуемости: крупные предсказуемые блоки времени реинвестируются лучше, осколки по 15 минут — хуже. Коэффициент показан под задачей и уже учтён во всех суммах.</p>
+    <p>Стоимость часа — оклад роли × 1,4 (налоги и взносы) ÷ 176 рабочих часов. Подписка считается в вайбах по ценам Битрикс24 с НДС и скидкой за срок оплаты. Чистая экономия первого года = стоимость освобождённого времени за 12 месяцев − подписка за 12 месяцев; окупаемость — во сколько рабочих дней месяца экономия покрывает подписку.</p>
+  </section>
   <div class="foot">Все суммы — в рублях, округление до целых. Налоговая модель упрощённая (оклад на руки × 1,4). Расчёт носит оценочный характер. <span id="price-date"></span></div>
 </div>
 <script>
@@ -748,9 +760,9 @@ const GROUPS = [
 // (автозаполнение поля «Сколько человек»). У маркетинга своего счётчика нет: empCount — это вся компания,
 // поэтому для роли emp поле c не автозаполняется, берётся оклад empSal.
 const ROLES = {
-  boss:  {sal:"ropSal", cnt:"ropCount", label:"руководителя"},
-  sales: {sal:"mgrSal", cnt:"mgrCount", label:"менеджера"},
-  emp:   {sal:"empSal", cnt:null,       label:"сотрудника"},
+  boss:  {sal:"ropSal", cnt:"ropCount", name:"руководитель", label:"руководителя"},   // label — родительный падеж для «час руководителя»
+  sales: {sal:"mgrSal", cnt:"mgrCount", name:"менеджер",     label:"менеджера"},
+  emp:   {sal:"empSal", cnt:null,       name:"сотрудник",    label:"сотрудника"},
 };
 const PERIOD_MULT  = {day:DAYS_MONTH, week:WEEKS_MONTH, month:1, quarter:1/3};   // сколько раз в месяц
 const PERIOD_LABEL = {day:"в день", week:"в неделю", month:"в месяц", quarter:"в квартал"};
@@ -995,6 +1007,34 @@ function verdictText(res, econ){
 }
 const priceDateText = () => "Цены актуальны на " + formatConfigDate(COWORK_PRICE_CONFIG.actualOn)
   + (thresholdsAreEstimate() ? " Пороги тарифов — ориентир до подтверждения продуктом." : "");   // дата уже кончается на «г.»
+/* ---------- Текст расчёта для копирования (T12, ТЗ §5.2) ---------- */
+const PAGE_URL = "https://cowork.bitrixgpt.online/";
+function buildSummaryText(res, tariff, sub, econ, company, opts){
+  const o = opts || {};
+  const days = (Math.round(res.days*10)/10).toLocaleString("ru-RU");
+  const items = res.items.slice().sort((x,y)=>y.r.hours - x.r.hours);
+  const rates = Object.entries(ROLES).map(([id, r])=> r.name + " " + fmtMoney(costHour(num(company && company[r.sal]))) + "/ч").join(", ");
+  const period = periodByMonths(tariff.months);
+  const lines = [
+    "Расчёт выгоды Коворк/Код" + (o.companyName ? " — " + o.companyName : ""),
+    "",
+    "Задачи (часов в месяц с учётом реализуемости):",
+    ...items.map(it => "• " + it.task.n + ": " + fmtHours(it.r.hours) + " (освобождается " + fmtHours(it.r.rawHours) + ", коэффициент " + fmtPct(it.r.real) + ")"),
+    "",
+    "Освобождается: " + fmtHours(res.totalHours) + " в месяц (≈ " + days + " рабочих дней), без коэффициента — " + fmtHours(res.totalRawHours),
+    "Стоимость этого времени: " + fmtMoney(res.totalFot) + " в месяц. Ставка часа: " + rates,
+    "Тариф: " + tariff.chosen.name + (tariff.seats > 1 ? " × " + tariff.seats : "")
+      + (period.months > 1 ? ", оплата за " + period.months + " мес (скидка " + Math.round(period.discount*100) + "%)" : ", оплата помесячно")
+      + " — " + fmtMoney(sub.grossMonth) + " в месяц с НДС" + (tariff.manual ? " (по задачам подходит " + tariff.rec.tier.name + ")" : ""),
+    "Чистая экономия: " + fmtMoney(econ.netMonth) + " в месяц, " + fmtMoney(econ.netFirstYear) + " за первый год"
+      + (econ.paybackDays > 0 ? ". Подписка окупается за " + econ.paybackDays + " раб. дн." : ""),
+    "",
+    "Считалось с коэффициентом реализуемости (методика NBER w30866): " + (o.url || PAGE_URL) + "#method",
+    "Калькулятор: " + (o.url || PAGE_URL),
+    priceDateText(),
+  ];
+  return lines.join("\n");
+}
 // @cw:end
 
 /* ---------- Связка модели со страницей: интерфейс задач (T8); панель итога — T10 ---------- */
@@ -1300,6 +1340,37 @@ $("seats").addEventListener("input", e=>{
 });
 $("seats-auto").addEventListener("click", ()=>{ pricing.seatsManual = false; sessTouch(); recompute(); });
 
+/* ---------- «Скопировать расчёт» (T12) ---------- */
+let lastCalc = null;   // последний расчёт: res, tariff, sub, econ, company — для копирования и отчёта
+function currentSummaryText(){
+  if(!lastCalc) return "";
+  return buildSummaryText(lastCalc.res, lastCalc.tariff, lastCalc.sub, lastCalc.econ, lastCalc.company,
+    { companyName: ($("company-name").value || "").trim(), url: PAGE_URL });
+}
+let copiedTimer = null;
+function showCopied(){
+  const el = $("copied"); el.hidden = false;
+  clearTimeout(copiedTimer); copiedTimer = setTimeout(()=>{ el.hidden = true; }, 2000);
+}
+function copyFallback(text){
+  const ta = $("copy-fallback");
+  ta.value = text; ta.hidden = false; ta.focus(); ta.select();
+  let ok = false;
+  try { ok = document.execCommand && document.execCommand("copy"); } catch(e){ ok = false; }
+  if(ok){ ta.hidden = true; showCopied(); }   // иначе textarea остаётся выделенной — можно скопировать вручную
+  return ok;
+}
+function copySummary(){
+  const text = currentSummaryText();
+  if(!text) return;
+  const done = ()=>{ showCopied(); if(typeof logCopy === "function") logCopy(); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, ()=>{ if(copyFallback(text) && typeof logCopy === "function") logCopy(); });
+  } else if(copyFallback(text) && typeof logCopy === "function") logCopy();
+}
+$("copy-btn").addEventListener("click", copySummary);
+$("copy-fallback").addEventListener("blur", ()=>{ $("copy-fallback").hidden = true; });
+
 // ключ → заголовок и текст модалки «i» (блок info-modal ядра делегирует сюда клики по .info-btn)
 function openInfo(key){
   const t = $("info-title");
@@ -1338,6 +1409,7 @@ function recompute(){
   $("nav-total").innerHTML = res.items.length
     ? "Освободится: <b>" + fmtHours(res.totalHours) + "/мес</b> · <b>" + fmtMoney(res.totalFot) + "/мес</b>" : "";
 
+  lastCalc = {res, tariff, sub, econ, company};
   renderPanel(res, tariff, sub, econ);
   saveState();
 }
