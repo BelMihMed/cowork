@@ -554,13 +554,175 @@ const METHOD_NOTE = "<div class='method'><b>О методике расчёта.<
   + "коэффициент указан в каждом сценарии и уже учтён во всех суммах отчёта.</div>";
 // @core:end
 
-/* ---------- Коворк: продуктовая часть (каркас) ----------
-   T6 — модель задач TASKS, роли, REAL_COWORK, формулы; T7 — COWORK_PRICE_CONFIG, подбор тарифа и подписок, финмодель;
-   T8/T10 — интерфейс и панель итога; T11 — сохранение состояния; T12 — копирование; T13 — buildCoworkReportHtml; T14 — аналитика. */
-const state = {};        // state[taskId] = {selected, values:{b,a,f,u,c}, dirty:{c:true}} — контракт блока company ядра
-const AUTOFILL = {};     // показатель компании → [[taskId, "c"], …]; строится из ролей задач (T6)
+/* ---------- Коворк: продуктовая часть ----------
+   T6 — модель задач: всё между «@cw:model» и «@cw:end» — чистый JS без DOM, его читают тесты репо cowork.
+   T7 — COWORK_PRICE_CONFIG, подбор тарифа и подписок, финмодель; T8/T10 — интерфейс и панель итога;
+   T11 — сохранение состояния; T12 — копирование; T13 — buildCoworkReportHtml; T14 — аналитика. */
 const ICON_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
-const INFO = {};         // пояснения «как считается» по ключам задач (T6)
+
+// @cw:model
+/* ---------- Задачи Коворк/Код: группы, роли, единицы периода (ТЗ §3.2) ---------- */
+const GROUPS = [
+  {id:"boss",  title:"Если вы руководитель"},
+  {id:"sales", title:"Если вы в продажах"},
+  {id:"mkt",   title:"Если вы в маркетинге"},
+];
+// Роль задачи → показатели блока «Данные о компании»: sal — оклад (ставка часа), cnt — счётчик людей
+// (автозаполнение поля «Сколько человек»). У маркетинга своего счётчика нет: empCount — это вся компания,
+// поэтому для роли emp поле c не автозаполняется, берётся оклад empSal.
+const ROLES = {
+  boss:  {sal:"ropSal", cnt:"ropCount", label:"руководителя"},
+  sales: {sal:"mgrSal", cnt:"mgrCount", label:"менеджера"},
+  emp:   {sal:"empSal", cnt:null,       label:"сотрудника"},
+};
+const PERIOD_MULT  = {day:DAYS_MONTH, week:WEEKS_MONTH, month:1, quarter:1/3};   // сколько раз в месяц
+const PERIOD_LABEL = {day:"в день", week:"в неделю", month:"в месяц", quarter:"в квартал"};
+const TASK_FIELDS  = ["b","a","f","u","c"];   // минут сейчас, минут с Коворком, частота, единица, сколько человек
+
+// 15 задач из исходной сборки (типовые минуты — стартовые, статус «ориентир», см. COWORK-DATA.md §2)
+const TASKS = [
+  {id:"rep",   group:"boss",  role:"boss",  n:"Еженедельный отчёт по компании", p:"Каждую пятницу собираю цифры из CRM и задач вручную", b:240, a:8,  f:1, u:"week",    c:1, code:false, est:false, q:"Собери отчёт за неделю: новые сделки, конверсия по этапам, просроченные задачи по отделам. Оформи презентацией на 5 слайдов", link:""},
+  {id:"plan",  group:"boss",  role:"boss",  n:"План на день",                   p:"Всё утро разбираю задачи, письма и встречи",            b:30,  a:2,  f:1, u:"day",     c:1, code:false, est:false, q:"Составь мой план на сегодня: встречи из календаря, задачи с дедлайном сегодня и письма, на которые я не ответил", link:""},
+  {id:"load",  group:"boss",  role:"boss",  n:"Анализ загрузки команды",        p:"Не вижу, кто в команде перегружен, а кто свободен",     b:120, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Покажи загрузку сотрудников отдела продаж на неделю: сколько задач и сделок у каждого, кто перегружен", link:""},
+  {id:"risk",  group:"boss",  role:"boss",  n:"Риски по проектам",              p:"О сорванных сроках узнаю, когда уже поздно",            b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди проекты, где есть риск сорвать сроки: просроченные задачи, зависшие этапы, задачи без ответственного", link:""},
+  {id:"chat",  group:"boss",  role:"boss",  n:"Решения из чатов",               p:"Решения теряются в длинных обсуждениях в чатах",        b:60,  a:5,  f:2, u:"week",    c:1, code:false, est:true,  q:"Прочитай обсуждение в чате «Запуск сайта», выпиши принятые решения, открытые вопросы и создай задачи по каждому", link:""},
+  {id:"call",  group:"sales", role:"sales", n:"Подготовка к звонку",            p:"Звоню клиенту и не помню, о чём договаривались",        b:15,  a:1,  f:2, u:"day",     c:1, code:false, est:false, q:"Собери всё по компании «Ромашка» перед звонком: история сделок, последние письма и звонки, открытые задачи, кто ЛПР", link:""},
+  {id:"kp",    group:"sales", role:"sales", n:"Презентация к встрече",          p:"Каждое КП собираю заново",                              b:240, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Подготовь презентацию для встречи с «Ромашкой» по сделке №1234: наше предложение, сроки, цены из сделки, кейсы из похожих отраслей", link:""},
+  {id:"meet",  group:"sales", role:"sales", n:"Итоги встречи",                  p:"Договорённости со встречи остаются только в голове",   b:30,  a:3,  f:3, u:"week",    c:1, code:false, est:false, q:"Вот заметки со встречи (файл). Обнови сделку, поставь задачи по договорённостям, напиши клиенту письмо с резюме", link:""},
+  {id:"sales", group:"sales", role:"sales", n:"Анализ продаж",                  p:"Не вижу, на каком этапе теряются сделки",               b:180, a:7,  f:1, u:"month",   c:1, code:false, est:false, q:"Проанализируй продажи за квартал: конверсия по этапам, средний чек, рейтинг менеджеров, на каком этапе больше всего потерь", link:""},
+  {id:"mail",  group:"sales", role:"sales", n:"Почта → CRM",                    p:"Заявки теряются в почте, лиды завожу руками",           b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди в почте письма от новых клиентов за неделю и создай по ним лиды с контактами и сутью запроса", link:""},
+  {id:"crm",   group:"sales", role:"sales", n:"Порядок в CRM",                  p:"В CRM дубли, пустые поля и зависшие сделки",            b:240, a:10, f:1, u:"month",   c:1, code:false, est:true,  q:"Найди сделки без активности больше 14 дней, сгруппируй по менеджерам и предложи, что с ними делать", link:""},
+  {id:"dash",  group:"mkt",   role:"emp",   n:"Маркетинговый дашборд",          p:"Свожу цифры из разных источников в Excel руками",       b:360, a:10, f:1, u:"month",   c:1, code:true,  est:false, q:"Собери дашборд: лиды по источникам за месяц, стоимость лида, конверсия в сделку. Сделай приложением в портале", link:""},
+  {id:"comp",  group:"mkt",   role:"emp",   n:"Анализ конкурентов",             p:"Раз в квартал неделю собираю обзор конкурентов",        b:360, a:10, f:1, u:"quarter", c:1, code:false, est:false, q:"Изучи сайты и соцсети конкурентов А, Б, В: позиционирование, цены, акции. Сведи в таблицу и выдели, где мы отличаемся", link:""},
+  {id:"diff",  group:"mkt",   role:"emp",   n:"Сравнение документов",           p:"Сверяю версии КП, брифов и договоров глазами",          b:120, a:6,  f:2, u:"month",   c:1, code:false, est:false, q:"Сравни две версии брифа (файлы) и покажи, что изменилось", link:""},
+  {id:"land",  group:"mkt",   role:"emp",   n:"Лендинг под акцию",              p:"Простой лендинг неделями ждёт подрядчика",              b:1440,a:20, f:1, u:"quarter", c:1, code:true,  est:false, q:"Собери лендинг под акцию: заголовок, три преимущества, форма заявки, которая создаёт лид в CRM", link:""},
+];
+const taskById = id => TASKS.find(t=>t.id===id);
+
+/* ---------- Реализуемость (ТЗ §3.4): методика BitrixGPT, база 40%, один коэффициент на задачу, без исключений ---------- */
+const REAL_COWORK = {
+  rep:   {k:0.55, why:"Отчёт — крупный предсказуемый блок раз в неделю: четыре часа пятницы возвращаются целиком, а не осколками. Такое время реинвестируется заметно лучше базовых 40%."},
+  plan:  {k:0.35, why:"План дня — граница рабочего дня, удобная форма для реинвестирования, но кусок всего в полчаса. Мелкие утренние куски конвертируются в результат хуже базовой планки."},
+  load:  {k:0.50, why:"Анализ загрузки — плановый еженедельный блок в два часа: время предсказуемо и стоит в календаре, поэтому доля выше базовой."},
+  risk:  {k:0.50, why:"Проверка рисков — плановый еженедельный блок, но сама экономия оценочная («примерно»): берём умеренное превышение базы."},
+  chat:  {k:0.40, why:"Разбор чатов случается непредсказуемо, время возвращается кусками по часу в разные дни — по форме это ближе всего к эталону исследования, берём базовые 40%."},
+  call:  {k:0.30, why:"Подготовка к звонку — осколки по 15 минут между звонками. Такие куски почти не собираются во что-то цельное, поэтому доля ниже базовой."},
+  kp:    {k:0.55, why:"Презентация — крупный блок в четыре часа раз в неделю: большой непрерывный кусок времени, который легко занять следующей сделкой."},
+  meet:  {k:0.40, why:"Итоги встречи — куски по полчаса сразу после встреч, в непредсказуемое время. Форма совпадает с эталоном исследования — базовые 40%."},
+  sales: {k:0.55, why:"Анализ продаж — крупный плановый блок раз в месяц: три часа возвращаются одним куском, который реинвестируется лучше базы."},
+  mail:  {k:0.45, why:"Разбор почты — плановый еженедельный блок в час, но объём заявок оценочный («примерно»): чуть выше базовой планки."},
+  crm:   {k:0.55, why:"Чистка CRM — крупный блок раз в месяц (четыре часа), время предсказуемо и возвращается целиком, хотя оценка объёма приблизительная."},
+  dash:  {k:0.60, why:"Дашборд в режиме Код делается один раз и потом обновляется сам: исчезает не только крупный блок ручной сводки, но и повторяющаяся работа. Это уже ближе к несделанной работе, чем к высвобожденному времени."},
+  comp:  {k:0.60, why:"Обзор конкурентов — неделя работы раз в квартал, самый крупный кусок среди задач. Целая неделя реинвестируется почти без потерь на переключение."},
+  diff:  {k:0.45, why:"Сравнение документов — средние блоки по два часа пару раз в месяц: крупнее осколков, но появляются непредсказуемо, поэтому чуть выше базы."},
+  land:  {k:0.70, why:"Лендинг в режиме Код убирает ожидание подрядчика как поток работы: не человек получает время обратно, а задача перестаёт существовать. Такой эффект реализуется лучше всего."},
+};
+const realOf = task => realCoef(REAL_COWORK, task.id);   // realCoef — из блока method ядра
+
+/* ---------- Пресеты «Кто вы?» (ТЗ §4.1): набор задач и множители c из сборки ---------- */
+const PRESETS = {
+  boss:  {label:"Я руководитель",     on:["rep","plan","load","risk","chat"],                   c:{}},
+  sales: {label:"Я в продажах",       on:["plan","call","kp","meet","mail"],                    c:{}},
+  mkt:   {label:"Я в маркетинге",     on:["plan","dash","comp","diff","land"],                  c:{}},
+  team:  {label:"Считаю для команды", on:["rep","plan","call","kp","meet","sales","dash"],      c:{plan:5, call:3, kp:3, meet:3}},
+};
+const DEFAULT_PRESET = "boss";
+
+/* ---------- Состояние ---------- */
+const state = {};   // state[id] = {selected, values:{b,a,f,u,c}, dirty:{}} — контракт блока company ядра
+const taskDefaults = task => ({b:task.b, a:task.a, f:task.f, u:task.u, c:task.c});
+function initState(){ TASKS.forEach(t=>{ state[t.id] = {selected:false, values:taskDefaults(t), dirty:{}}; }); }
+initState();
+
+// Пресет включает свой набор задач и возвращает поля к типовым значениям (c — с множителем пресета).
+// Поля, изменённые руками (dirty), не трогаем: ручная правка сильнее пресета и автозаполнения.
+function applyPreset(presetId){
+  const P = PRESETS[presetId];
+  if(!P) return false;
+  TASKS.forEach(t=>{
+    const st = state[t.id], d = taskDefaults(t);
+    st.selected = P.on.includes(t.id);
+    TASK_FIELDS.forEach(k=>{
+      if(st.dirty[k]) return;
+      st.values[k] = (k==="c" && P.c[t.id]!=null) ? P.c[t.id] : d[k];
+    });
+  });
+  return true;
+}
+
+// Автозаполнение из «Данных о компании» (ядро applyCompany): счётчик роли → поле c задач этой роли
+const AUTOFILL = {};
+TASKS.forEach(t=>{
+  const cnt = ROLES[t.role].cnt;
+  if(cnt) (AUTOFILL[cnt] = AUTOFILL[cnt] || []).push([t.id, "c"]);
+});
+
+/* ---------- Формулы (ТЗ §3.3) ----------
+   rawHours = max(0, b − a) / 60 × f × periodMult[u] × c      — часов в месяц до реализуемости
+   hours    = rawHours × k                                    — k из REAL_COWORK
+   rate     = costHour(оклад роли) = оклад × TAX / HOURS_MONTH — из ядра
+   fotMonth = hours × rate                                                                        */
+const num = x => Number(x) || 0;
+function taskRawHours(v){
+  return Math.max(0, num(v.b) - num(v.a)) / 60 * num(v.f) * (PERIOD_MULT[v.u] || 0) * num(v.c);
+}
+const taskRunsPerPerson = v => num(v.f) * (PERIOD_MULT[v.u] || 0);   // запусков в месяц на одного человека
+const taskRuns = v => taskRunsPerPerson(v) * num(v.c);                 // задач в месяц по всем людям (подбор тарифа)
+// company = {empSal, mgrSal, ropSal, …} — значения блока «Данные о компании»
+const roleRate = (role, company) => costHour(num(company && company[ROLES[role].sal]));
+function computeTask(task, st, company){
+  const v = st.values;
+  const rawHours = taskRawHours(v);
+  const real = realOf(task);
+  const hours = rawHours * real;
+  const rate = roleRate(task.role, company);
+  return {
+    rawHours, hours, real, rate,
+    fot: hours * rate,
+    runs: taskRuns(v),
+    codeRuns: task.code ? taskRunsPerPerson(v) : 0,   // правило Кода считает запуски без множителя c
+  };
+}
+function computeAll(company){
+  const items = [];
+  let totalHours = 0, totalRawHours = 0, totalFot = 0, runs = 0, codeRuns = 0, maxC = 0;
+  TASKS.forEach(t=>{
+    const st = state[t.id];
+    if(!st.selected) return;
+    const r = computeTask(t, st, company);
+    items.push({task:t, r});
+    totalHours += r.hours; totalRawHours += r.rawHours; totalFot += r.fot;
+    runs += r.runs; codeRuns += r.codeRuns; maxC = Math.max(maxC, num(st.values.c));
+  });
+  return { items, totalHours, totalRawHours, totalFot, runs, codeRuns, maxC,
+           fte: totalHours / HOURS_MONTH, days: totalHours / DAY_HOURS };
+}
+
+/* ---------- Форматирование ---------- */
+const fmtHours = h => (h >= 10 ? Math.round(h) : Math.round(h*10)/10).toLocaleString("ru-RU") + " ч";
+const fmtMin = m => m >= 1440 && m % 480 === 0 ? (m/480).toLocaleString("ru-RU") + " дн." : m >= 60 ? (Math.round(m/6)/10).toLocaleString("ru-RU") + " ч" : m + " мин";
+const fmtPct = k => Math.round(k*100) + "%";
+
+// пояснение «как считается» для модалки «i» одной задачи
+function describeTask(task, st, company){
+  const v = st.values, r = computeTask(task, st, company);
+  const perMonth = Math.round(taskRunsPerPerson(v) * 10) / 10;
+  return "Сейчас задача занимает " + num(v.b) + " мин, с Коворком — " + num(v.a) + " мин: экономия "
+    + Math.max(0, num(v.b) - num(v.a)) + " мин за раз. Частота " + num(v.f) + " " + (PERIOD_LABEL[v.u] || "")
+    + " (≈ " + perMonth.toLocaleString("ru-RU") + " раз в месяц), делают " + num(v.c) + " чел. — это "
+    + fmtHours(r.rawHours) + " в месяц. Учитываем реализуемую долю " + fmtPct(r.real) + ": в результат уходит "
+    + fmtHours(r.hours) + ". Час " + ROLES[task.role].label + " стоит " + fmtMoney(r.rate)
+    + " (оклад × 1,4 ÷ 176), итого " + fmtMoney(r.fot) + " в месяц.";
+}
+// @cw:end
+
+/* ---------- Связка модели со страницей (интерфейс карточек — T8, панель итога — T10) ---------- */
+// значения блока «Данные о компании» → {empCount, empSal, mgrCount, mgrSal, ropCount, ropSal}
+function readCompany(){
+  const c = {};
+  document.querySelectorAll(".comp-in").forEach(inp=>{ c[inp.dataset.comp] = parseNum(inp.value); });
+  return c;
+}
 
 // ключ → заголовок и текст модалки «i» (блок info-modal ядра делегирует сюда клики по .info-btn)
 function openInfo(key){
@@ -568,21 +730,33 @@ function openInfo(key){
   const x = document.getElementById("info-text");
   const k = String(key);
   sessInfo(k);   // где просят пояснения — зоны трения
+  x.textContent = "";
   if(k.startsWith("real:")){
+    const c = REAL_COWORK[k.slice(5)];
     t.textContent = "Почему такой коэффициент";
-    x.textContent = "";
+    const p1 = document.createElement("p"); p1.textContent = c ? c.why : "";
     const p2 = document.createElement("p"); p2.className = "info-src"; p2.textContent = REAL_INFO;
-    x.append(p2);
+    x.append(p1, p2);
   } else {
-    t.textContent = "Как считается";
-    x.textContent = INFO[k] || "";
+    const task = taskById(k);
+    t.textContent = task ? "Как считается: " + task.n : "Как считается";
+    x.textContent = task ? describeTask(task, state[task.id], readCompany()) : "";
   }
   infoModal.hidden = false;
 }
 
-// главный пересчёт: часы и деньги по задачам, панель итога, мини-итог (T6, T10)
+// главный пересчёт: часы и деньги по задачам; панель итога и мини-итог — T10 (пока краткая сводка)
 function recompute(){
-  sessEcon(0);
+  const res = computeAll(readCompany());
+  sessEcon(res.totalFot);   // пик экономии на экране — виден даже без отчёта
+  const body = document.getElementById("summary-body");
+  if(!res.items.length){
+    body.innerHTML = '<p class="empty">Отметьте задачи, которые делаете руками, и калькулятор посчитает часы, деньги и подходящий тариф.</p>';
+    return;
+  }
+  body.innerHTML = '<p class="empty">Освобождается <b>' + fmtHours(res.totalRawHours) + '</b> в месяц, в результат уходит <b>'
+    + fmtHours(res.totalHours) + '</b> — это ' + (Math.round(res.days*10)/10).toLocaleString("ru-RU")
+    + ' рабочих дней. Стоимость этого времени: <b>' + fmtMoney(res.totalFot) + '</b> в месяц. Задач выбрано: ' + res.items.length + '.</p>';
 }
 
 // @core:company
@@ -714,6 +888,7 @@ document.addEventListener("click", e=>{
 });
 // @core:end
 
+applyPreset(DEFAULT_PRESET);   // стартовый пресет (T11 будет восстанавливать сохранённое состояние)
 recompute();
 </script>
 </body>
