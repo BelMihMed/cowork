@@ -1,0 +1,23 @@
+name: Tests
+
+on:
+  workflow_dispatch:      # первый прогон в новом репо запускается вручную (Actions → Run workflow) — нюанс, знакомый по calc-serv
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  cowork:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run glossary, formulas, pricing and scenario tests
+        run: npm test
