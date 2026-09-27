@@ -305,7 +305,8 @@
   .tier[aria-checked="true"]{background:#fff;color:var(--ink);border-color:#fff}
   .tier .tn{font-size:12px;font-weight:800;letter-spacing:.02em;overflow-wrap:anywhere}
   .tier .tp{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
-  .tier .tv{font-size:10px;color:rgba(255,255,255,.6);line-height:1.25;overflow-wrap:anywhere}   // может перенестись на 2 строки — плитка не должна ломать соседей
+  /* может перенестись на 2 строки — плитка не должна ломать соседей */
+  .tier .tv{font-size:10px;color:rgba(255,255,255,.6);line-height:1.25;overflow-wrap:anywhere}
   .tier[aria-checked="true"] .tv{color:var(--muted)}
   .tier .rec{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
     color:#0e6e5c;background:#8ef0c6;border-radius:20px;padding:2px 7px;white-space:nowrap}
@@ -314,8 +315,10 @@
   .linkbtn{background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:700;color:#8ef0c6;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
   .linkbtn:hover{color:#fff}
   .sp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-size:13px;color:rgba(255,255,255,.78)}
-  .period{display:inline-flex;gap:3px;background:rgba(255,255,255,.08);border-radius:12px;padding:3px}
-  .period button{font:inherit;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.75);background:transparent;border:0;border-radius:9px;padding:6px 7px;cursor:pointer;white-space:nowrap}
+  .period-row{margin-top:12px}
+  .period-label{font-size:13px;color:rgba(255,255,255,.78);margin-bottom:6px}
+  .period{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:rgba(255,255,255,.08);border-radius:12px;padding:3px}
+  .period button{font:inherit;font-size:11px;font-weight:700;color:rgba(255,255,255,.75);background:transparent;border:0;border-radius:9px;padding:6px 3px;cursor:pointer;line-height:1.2;overflow-wrap:anywhere;min-width:0}
   .period button[aria-pressed="true"]{background:#fff;color:var(--ink)}
   .seats-in{display:inline-flex;align-items:center;background:rgba(255,255,255,.08);border-radius:12px;border:1.5px solid transparent}
   .seats-in:focus-within{border-color:#8ef0c6;background:rgba(255,255,255,.12)}
@@ -425,7 +428,7 @@
         <div class="tiers" id="tiers" role="radiogroup" aria-label="Тариф Коворк/Код"></div>
         <p class="why" id="tier-why"></p>
         <button type="button" class="linkbtn" id="tier-auto" hidden>Подобрать по задачам</button>
-        <div class="sp-row"><span>Оплата</span><div class="period" id="period" role="group" aria-label="Срок оплаты"></div></div>
+        <div class="period-row"><div class="period-label">Оплата</div><div class="period" id="period" role="group" aria-label="Срок оплаты"></div></div>
         <div class="sp-row"><label for="seats">Подписок <span id="seats-hint"></span></label>
           <span><span class="seats-in"><input id="seats" type="text" inputmode="numeric" value="1" aria-describedby="seats-hint"><span class="suf">шт.</span></span>
           <button type="button" class="linkbtn" id="seats-auto" hidden style="margin-left:8px">сбросить</button></span></div>
