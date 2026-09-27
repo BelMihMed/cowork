@@ -298,13 +298,14 @@
   .tiers-head .h{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.55);font-weight:700}
   .est-note{font-size:11px;font-weight:700;color:#ffcf9e;background:rgba(255,207,158,.14);border-radius:20px;padding:3px 9px}
   .tiers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-  .tier{position:relative;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:10px 6px 9px;
-    font:inherit;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:3px;min-width:0;transition:background-color .15s,border-color .15s}
+  .tier{position:relative;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:10px 4px 9px;
+    font:inherit;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:3px;min-width:0;max-width:100%;
+    transition:background-color .15s,border-color .15s}
   .tier:hover{background:rgba(255,255,255,.11)}
   .tier[aria-checked="true"]{background:#fff;color:var(--ink);border-color:#fff}
-  .tier .tn{font-size:12px;font-weight:800;letter-spacing:.02em}
-  .tier .tp{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .tier .tv{font-size:10.5px;color:rgba(255,255,255,.6);white-space:nowrap}
+  .tier .tn{font-size:12px;font-weight:800;letter-spacing:.02em;overflow-wrap:anywhere}
+  .tier .tp{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
+  .tier .tv{font-size:10px;color:rgba(255,255,255,.6);line-height:1.25;overflow-wrap:anywhere}   // может перенестись на 2 строки — плитка не должна ломать соседей
   .tier[aria-checked="true"] .tv{color:var(--muted)}
   .tier .rec{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
     color:#0e6e5c;background:#8ef0c6;border-radius:20px;padding:2px 7px;white-space:nowrap}
