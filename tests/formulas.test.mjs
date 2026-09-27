@@ -18,7 +18,7 @@ function modelRegion(src) {
 
 const NAMES = ["GROUPS", "ROLES", "PERIOD_MULT", "TASK_FIELDS", "TASKS", "REAL_COWORK", "realOf", "PRESETS", "DEFAULT_PRESET",
   "state", "initState", "applyPreset", "AUTOFILL", "taskRawHours", "taskRuns", "computeTask", "computeAll",
-  "describeTask", "taskById", "fmtHours", "fmtMin"];
+  "describeTask", "taskById", "fmtHours", "fmtMin", "taskPeopleCount"];
 
 // свежая модель на каждый тест: состояние изолировано, ядро — из той же страницы
 function loadModel(extraFragments = [], sandbox = {}) {
@@ -122,12 +122,48 @@ test("roles: hourly rate comes from the company salary of the task's role", () =
     { boss: ["ropSal", "ropCount"], sales: ["mgrSal", "mgrCount"], emp: ["empSal", null] });
 });
 
-test("autofill: role headcount fills the people field, the whole-company count never does", () => {
+test("autofill: only scope:person tasks get headcount; scope:team tasks always stay at 1", () => {
   const m = loadModel();
+  // 27.09.2026: rep/load/risk (руководитель) и sales/crm (продажи) в реальности делает один человек на всю
+  // команду, а не каждый сотрудник роли — поэтому их исключили из автозаполнения (см. @cw:model, taskPeopleCount).
   assert.deepEqual(plain(Object.keys(m.AUTOFILL).sort()), ["mgrCount", "ropCount"]);
-  assert.deepEqual(plain(m.AUTOFILL.ropCount.map(([id, k]) => `${id}.${k}`)), ["rep.c", "plan.c", "load.c", "risk.c", "chat.c"]);
-  assert.deepEqual(plain(m.AUTOFILL.mgrCount.map(([id]) => id)), ["call", "kp", "meet", "sales", "mail", "crm"]);
+  assert.deepEqual(plain(m.AUTOFILL.ropCount.map(([id, k]) => `${id}.${k}`)), ["plan.c", "chat.c"]);
+  assert.deepEqual(plain(m.AUTOFILL.mgrCount.map(([id]) => id)), ["call", "kp", "meet", "mail"]);
   assert.equal("empCount" in m.AUTOFILL, false, "empCount — вся компания, маркетингу не подставляется");
+  for (const id of ["rep", "load", "risk", "sales", "crm"]) {
+    assert.equal(m.taskById(id).scope, "team", `${id} — командная задача, не на штат`);
+  }
+  for (const id of ["plan", "chat", "call", "kp", "meet", "mail"]) {
+    assert.equal(m.taskById(id).scope, "person", `${id} — считается на каждого сотрудника роли`);
+  }
+});
+
+test("taskPeopleCount: scope:team is pinned to 1 even if state somehow holds another value", () => {
+  const m = loadModel();
+  const rep = m.taskById("rep");
+  assert.equal(m.taskPeopleCount(rep, m.state.rep), 1);
+  m.state.rep.values.c = 7;   // не должно случиться через UI, но формула обязана быть устойчивой
+  assert.equal(m.taskPeopleCount(rep, m.state.rep), 1, "scope:team игнорирует c из состояния");
+  const call = m.taskById("call");
+  m.state.call.values.c = 4;
+  assert.equal(m.taskPeopleCount(call, m.state.call), 4, "scope:person использует реальное значение");
+});
+
+test("applyPreset: tasks outside the chosen preset still get the real headcount, not a hardcoded 1", () => {
+  // 27.09.2026: обнаружено при добавлении строки «Считаем на N чел.» — applyPreset раньше сбрасывал c=1
+  // для ЛЮБОЙ задачи вне текущего пресета, даже если в компании реально 5 менеджеров. Теперь для scope:"person"
+  // без явного множителя пресета берётся снимок counts (как readCompany()), а не дефолт задачи.
+  const m = loadModel();
+  m.applyPreset("boss", { mgrCount: 5, ropCount: 1 });
+  assert.equal(m.state.call.values.c, 5, "call не входит в пресет «руководитель», но должен получить реальный штат продаж");
+  assert.equal(m.state.chat.values.c, 1, "chat входит в пресет и role=boss, штат руководителей = 1 — совпадает");
+  assert.equal(m.state.rep.values.c, 1, "scope:team всегда 1, даже если передать counts");
+  // явный множитель пресета «Считаю для команды» (call:3) — важнее переданного штата (5)
+  m.applyPreset("team", { mgrCount: 5, ropCount: 1 });
+  assert.equal(m.state.call.values.c, 3, "множитель пресета не перебивается штатом компании");
+  // без counts (как во всех остальных тестах) — прежнее поведение, дефолт 1
+  m.applyPreset("boss");
+  assert.equal(m.state.call.values.c, 1, "без переданного штата — как раньше, дефолт задачи");
 });
 
 test("dirty: a hand-edited people field survives both preset and company autofill", () => {
@@ -153,8 +189,10 @@ test("dirty: core applyCompany respects dirty flags of the product state", () =>
   assert.equal(m.state.kp.values.c, 9, "остальные задачи роли получили счётчик");
   assert.equal(targets['#card-kp .num-in[data-k="c"]'].value, "9", "и поле на карточке обновлено");
   assert.equal(m.state.dash.values.c, 1, "маркетинг счётчиком компании не заполняется");
+  assert.equal(m.state.sales.values.c, 1, "командная задача продаж не подхватывает штат менеджеров");
   m.applyCompany({ value: "4", dataset: { comp: "ropCount" } });
-  assert.equal(m.state.rep.values.c, 4);
+  assert.equal(m.state.chat.values.c, 4, "person-задача руководителя получила счётчик");
+  assert.equal(m.state.rep.values.c, 1, "командная задача (недельный отчёт) не подхватывает штат руководителей");
 });
 
 test("presets: sets of tasks and multipliers from the source build", () => {

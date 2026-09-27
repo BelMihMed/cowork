@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<!-- core: df0acff6ae99 -->
+<!-- core: 40e45a3f0a02 -->
 <!-- Файл собран build_cowork.py из канона index.html (BitrixGPT) и шаблона cowork.src.html. Руками не править: общее — в каноне, продуктовое — в шаблоне. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,6 +52,16 @@
     line-height:1.08;letter-spacing:-.015em;margin:0;padding-bottom:.05em;
     background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   .head p,.head .lede{color:var(--muted);font-size:16px;max-width:66ch;margin:18px 0 0;line-height:1.6}
+
+  /* переключатель между продуктами линейки (BitrixGPT ⇄ Коворк/Код) — акцент задаёт продукт (.sel переопределяется у Коворка) */
+  .head-top{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;margin-bottom:12px}
+  .head-top .eyebrow{margin:0}
+  .prod-switch{display:flex;gap:4px;background:var(--panel);border-radius:14px;padding:4px;flex:none}
+  .prod-opt{border:0;border-radius:11px;background:transparent;padding:8px 14px;font:inherit;font-family:Manrope,sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-decoration:none;white-space:nowrap;display:inline-block;transition:background-color .15s,color .15s,box-shadow .15s}
+  .prod-opt.sel{background:var(--grad-cta);color:#fff;box-shadow:0 2px 8px rgba(40,40,90,.18);cursor:default}
+  .prod-opt:not(.sel):hover{color:var(--ink);background:rgba(0,0,0,.05)}
+  @media(max-width:600px){.prod-switch{width:100%}.prod-opt{flex:1;text-align:center}}
+
   .hint{background:var(--panel);border:0;color:var(--muted);
     border-radius:14px;padding:13px 18px;font-size:14px;margin-bottom:20px}
 
@@ -223,6 +233,7 @@
   .navbar .chip[data-go="sec-sales"]{color:var(--task-sales-ink);background:var(--task-sales-bg)}
   .navbar .chip[data-go="sec-mkt"]{color:var(--task-mkt-ink);background:var(--task-mkt-bg)}
   .navbar .chip.go-summary{color:#fff;background:linear-gradient(95deg,var(--cw-accent),hsl(205,78%,48%))}
+  .prod-opt.sel{background:linear-gradient(95deg,var(--cw-accent),hsl(205,78%,48%))}
   .navbar .reset{font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:10px}
   .navbar .reset:hover{color:var(--ink);background:var(--panel)}
   .group-boss,.group-sales,.group-mkt,.summary-panel{scroll-margin-top:84px}
@@ -268,7 +279,6 @@
   .flag.est{background:#fdf6ea;color:#a9701f}
   .card-body{padding:0 22px 22px;border-top:1px solid #f2f2f5}
   .card-body[hidden]{display:none}
-  .in .unit-sel{border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);padding:10px 8px 10px 4px;cursor:pointer}
   .field.freq .in input{flex:0 0 64px;width:64px;padding-right:4px}
   .result{margin-top:16px;background:var(--panel);border:0;border-radius:14px;padding:13px 18px}
   .res-head{display:flex;justify-content:flex-end;margin:-2px 0 2px}
@@ -277,8 +287,9 @@
   .res-row .val{font-weight:800;font-variant-numeric:tabular-nums;color:var(--cw-accent-ink);text-align:right}
   .res-row .val small{font-weight:600;color:var(--muted);font-size:12.5px}
   .real-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);border-top:1px dashed #dcdce2;margin-top:6px;padding:8px 0 1px}
-  .real-row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-  .real-row .info-btn{padding:0 1px} .real-row .info-btn svg{width:15px;height:15px}
+  .scope-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);margin-top:4px}
+  .real-row b,.scope-row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .real-row .info-btn,.scope-row .info-btn{padding:0 1px} .real-row .info-btn svg,.scope-row .info-btn svg{width:15px;height:15px}
   .prompt{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);background:var(--cw-accent-soft);border-radius:12px;padding:11px 14px}
   .prompt b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cw-accent-ink);margin-bottom:4px}
 
@@ -370,7 +381,13 @@
 <div class="wrap">
   <div class="spectrum"></div>
   <div class="head">
-    <p class="eyebrow">Bitrix24 · Коворк/Код · Калькулятор</p>
+    <div class="head-top">
+      <p class="eyebrow">Bitrix24 · Коворк/Код · Калькулятор</p>
+      <div class="prod-switch" aria-label="Другой продукт линейки Bitrix24 AI">
+        <a class="prod-opt" href="https://bitrixgpt.online/">BitrixGPT</a>
+        <span class="prod-opt sel" aria-current="page">Коворк/Код</span>
+      </div>
+    </div>
     <h1>Сколько часов вам вернёт Коворк/Код</h1>
     <p class="lede">Отметьте задачи, которые вы делаете руками, и посмотрите, сколько часов и денег в месяц освобождает Коворк/Код. Считаем по той же методике, что и калькулятор BitrixGPT: с коэффициентом реализуемости и датированными ценами.</p>
   </div>
@@ -766,31 +783,38 @@ const GROUPS = [
 // (автозаполнение поля «Сколько человек»). У маркетинга своего счётчика нет: empCount — это вся компания,
 // поэтому для роли emp поле c не автозаполняется, берётся оклад empSal.
 const ROLES = {
-  boss:  {sal:"ropSal", cnt:"ropCount", name:"руководитель", label:"руководителя"},   // label — родительный падеж для «час руководителя»
-  sales: {sal:"mgrSal", cnt:"mgrCount", name:"менеджер",     label:"менеджера"},
-  emp:   {sal:"empSal", cnt:null,       name:"сотрудник",    label:"сотрудника"},
+  // pl — родительный падеж множественного числа («5 руководителей») для пояснения «Считаем на N чел.»
+  boss:  {sal:"ropSal", cnt:"ropCount", name:"руководитель", label:"руководителя", pl:"руководителей"},
+  sales: {sal:"mgrSal", cnt:"mgrCount", name:"менеджер",     label:"менеджера",    pl:"менеджеров"},
+  emp:   {sal:"empSal", cnt:null,       name:"сотрудник",    label:"сотрудника",   pl:"сотрудников"},
 };
 const PERIOD_MULT  = {day:DAYS_MONTH, week:WEEKS_MONTH, month:1, quarter:1/3};   // сколько раз в месяц
 const PERIOD_LABEL = {day:"в день", week:"в неделю", month:"в месяц", quarter:"в квартал"};
 const TASK_FIELDS  = ["b","a","f","u","c"];   // минут сейчас, минут с Коворком, частота, единица, сколько человек
 
-// 15 задач из исходной сборки (типовые минуты — стартовые, статус «ориентир», см. COWORK-DATA.md §2)
+// 15 задач из исходной сборки (типовые минуты — стартовые, статус «ориентир», см. COWORK-DATA.md §2).
+// scope:"person" — задачу делает каждый сотрудник роли отдельно, «сколько человек» берётся из штата (AUTOFILL).
+// scope:"team"   — задачу в реальности делает один человек на всю команду (отчёт, чистка CRM, разовый анализ),
+//                  поэтому «сколько человек» зафиксировано в 1 и не подставляется из штата (см. taskPeopleCount).
+// freqEditable — стоит ли давать менять «Как часто»: только там, где объём объективно разный у разных компаний
+// (звонки, встречи, письма, документы); для задач со стандартной, зашитой в их суть периодичностью — не даём,
+// это лишнее поле, которое почти никто не станет менять и которое не двигает результат.
 const TASKS = [
-  {id:"rep",   group:"boss",  role:"boss",  n:"Еженедельный отчёт по компании", p:"Каждую пятницу собираю цифры из CRM и задач вручную", b:240, a:8,  f:1, u:"week",    c:1, code:false, est:false, q:"Собери отчёт за неделю: новые сделки, конверсия по этапам, просроченные задачи по отделам. Оформи презентацией на 5 слайдов", link:""},
-  {id:"plan",  group:"boss",  role:"boss",  n:"План на день",                   p:"Всё утро разбираю задачи, письма и встречи",            b:30,  a:2,  f:1, u:"day",     c:1, code:false, est:false, q:"Составь мой план на сегодня: встречи из календаря, задачи с дедлайном сегодня и письма, на которые я не ответил", link:""},
-  {id:"load",  group:"boss",  role:"boss",  n:"Анализ загрузки команды",        p:"Не вижу, кто в команде перегружен, а кто свободен",     b:120, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Покажи загрузку сотрудников отдела продаж на неделю: сколько задач и сделок у каждого, кто перегружен", link:""},
-  {id:"risk",  group:"boss",  role:"boss",  n:"Риски по проектам",              p:"О сорванных сроках узнаю, когда уже поздно",            b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди проекты, где есть риск сорвать сроки: просроченные задачи, зависшие этапы, задачи без ответственного", link:""},
-  {id:"chat",  group:"boss",  role:"boss",  n:"Решения из чатов",               p:"Решения теряются в длинных обсуждениях в чатах",        b:60,  a:5,  f:2, u:"week",    c:1, code:false, est:true,  q:"Прочитай обсуждение в чате «Запуск сайта», выпиши принятые решения, открытые вопросы и создай задачи по каждому", link:""},
-  {id:"call",  group:"sales", role:"sales", n:"Подготовка к звонку",            p:"Звоню клиенту и не помню, о чём договаривались",        b:15,  a:1,  f:2, u:"day",     c:1, code:false, est:false, q:"Собери всё по компании «Ромашка» перед звонком: история сделок, последние письма и звонки, открытые задачи, кто ЛПР", link:""},
-  {id:"kp",    group:"sales", role:"sales", n:"Презентация к встрече",          p:"Каждое КП собираю заново",                              b:240, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Подготовь презентацию для встречи с «Ромашкой» по сделке №1234: наше предложение, сроки, цены из сделки, кейсы из похожих отраслей", link:""},
-  {id:"meet",  group:"sales", role:"sales", n:"Итоги встречи",                  p:"Договорённости со встречи остаются только в голове",   b:30,  a:3,  f:3, u:"week",    c:1, code:false, est:false, q:"Вот заметки со встречи (файл). Обнови сделку, поставь задачи по договорённостям, напиши клиенту письмо с резюме", link:""},
-  {id:"sales", group:"sales", role:"sales", n:"Анализ продаж",                  p:"Не вижу, на каком этапе теряются сделки",               b:180, a:7,  f:1, u:"month",   c:1, code:false, est:false, q:"Проанализируй продажи за квартал: конверсия по этапам, средний чек, рейтинг менеджеров, на каком этапе больше всего потерь", link:""},
-  {id:"mail",  group:"sales", role:"sales", n:"Почта → CRM",                    p:"Заявки теряются в почте, лиды завожу руками",           b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди в почте письма от новых клиентов за неделю и создай по ним лиды с контактами и сутью запроса", link:""},
-  {id:"crm",   group:"sales", role:"sales", n:"Порядок в CRM",                  p:"В CRM дубли, пустые поля и зависшие сделки",            b:240, a:10, f:1, u:"month",   c:1, code:false, est:true,  q:"Найди сделки без активности больше 14 дней, сгруппируй по менеджерам и предложи, что с ними делать", link:""},
-  {id:"dash",  group:"mkt",   role:"emp",   n:"Маркетинговый дашборд",          p:"Свожу цифры из разных источников в Excel руками",       b:360, a:10, f:1, u:"month",   c:1, code:true,  est:false, q:"Собери дашборд: лиды по источникам за месяц, стоимость лида, конверсия в сделку. Сделай приложением в портале", link:""},
-  {id:"comp",  group:"mkt",   role:"emp",   n:"Анализ конкурентов",             p:"Раз в квартал неделю собираю обзор конкурентов",        b:360, a:10, f:1, u:"quarter", c:1, code:false, est:false, q:"Изучи сайты и соцсети конкурентов А, Б, В: позиционирование, цены, акции. Сведи в таблицу и выдели, где мы отличаемся", link:""},
-  {id:"diff",  group:"mkt",   role:"emp",   n:"Сравнение документов",           p:"Сверяю версии КП, брифов и договоров глазами",          b:120, a:6,  f:2, u:"month",   c:1, code:false, est:false, q:"Сравни две версии брифа (файлы) и покажи, что изменилось", link:""},
-  {id:"land",  group:"mkt",   role:"emp",   n:"Лендинг под акцию",              p:"Простой лендинг неделями ждёт подрядчика",              b:1440,a:20, f:1, u:"quarter", c:1, code:true,  est:false, q:"Собери лендинг под акцию: заголовок, три преимущества, форма заявки, которая создаёт лид в CRM", link:""},
+  {id:"rep",   group:"boss",  role:"boss",  n:"Еженедельный отчёт по компании", p:"Каждую пятницу собираю цифры из CRM и задач вручную", b:240, a:8,  f:1, u:"week",    c:1, code:false, est:false, q:"Собери отчёт за неделю: новые сделки, конверсия по этапам, просроченные задачи по отделам. Оформи презентацией на 5 слайдов", link:"", scope:"team", freqEditable:false},
+  {id:"plan",  group:"boss",  role:"boss",  n:"План на день",                   p:"Всё утро разбираю задачи, письма и встречи",            b:30,  a:2,  f:1, u:"day",     c:1, code:false, est:false, q:"Составь мой план на сегодня: встречи из календаря, задачи с дедлайном сегодня и письма, на которые я не ответил", link:"", scope:"person", freqEditable:false},
+  {id:"load",  group:"boss",  role:"boss",  n:"Анализ загрузки команды",        p:"Не вижу, кто в команде перегружен, а кто свободен",     b:120, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Покажи загрузку сотрудников отдела продаж на неделю: сколько задач и сделок у каждого, кто перегружен", link:"", scope:"team", freqEditable:false},
+  {id:"risk",  group:"boss",  role:"boss",  n:"Риски по проектам",              p:"О сорванных сроках узнаю, когда уже поздно",            b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди проекты, где есть риск сорвать сроки: просроченные задачи, зависшие этапы, задачи без ответственного", link:"", scope:"team", freqEditable:false},
+  {id:"chat",  group:"boss",  role:"boss",  n:"Решения из чатов",               p:"Решения теряются в длинных обсуждениях в чатах",        b:60,  a:5,  f:2, u:"week",    c:1, code:false, est:true,  q:"Прочитай обсуждение в чате «Запуск сайта», выпиши принятые решения, открытые вопросы и создай задачи по каждому", link:"", scope:"person", freqEditable:true},
+  {id:"call",  group:"sales", role:"sales", n:"Подготовка к звонку",            p:"Звоню клиенту и не помню, о чём договаривались",        b:15,  a:1,  f:2, u:"day",     c:1, code:false, est:false, q:"Собери всё по компании «Ромашка» перед звонком: история сделок, последние письма и звонки, открытые задачи, кто ЛПР", link:"", scope:"person", freqEditable:true},
+  {id:"kp",    group:"sales", role:"sales", n:"Презентация к встрече",          p:"Каждое КП собираю заново",                              b:240, a:5,  f:1, u:"week",    c:1, code:false, est:false, q:"Подготовь презентацию для встречи с «Ромашкой» по сделке №1234: наше предложение, сроки, цены из сделки, кейсы из похожих отраслей", link:"", scope:"person", freqEditable:true},
+  {id:"meet",  group:"sales", role:"sales", n:"Итоги встречи",                  p:"Договорённости со встречи остаются только в голове",   b:30,  a:3,  f:3, u:"week",    c:1, code:false, est:false, q:"Вот заметки со встречи (файл). Обнови сделку, поставь задачи по договорённостям, напиши клиенту письмо с резюме", link:"", scope:"person", freqEditable:true},
+  {id:"sales", group:"sales", role:"sales", n:"Анализ продаж",                  p:"Не вижу, на каком этапе теряются сделки",               b:180, a:7,  f:1, u:"month",   c:1, code:false, est:false, q:"Проанализируй продажи за квартал: конверсия по этапам, средний чек, рейтинг менеджеров, на каком этапе больше всего потерь", link:"", scope:"team", freqEditable:false},
+  {id:"mail",  group:"sales", role:"sales", n:"Почта → CRM",                    p:"Заявки теряются в почте, лиды завожу руками",           b:60,  a:5,  f:1, u:"week",    c:1, code:false, est:true,  q:"Найди в почте письма от новых клиентов за неделю и создай по ним лиды с контактами и сутью запроса", link:"", scope:"person", freqEditable:true},
+  {id:"crm",   group:"sales", role:"sales", n:"Порядок в CRM",                  p:"В CRM дубли, пустые поля и зависшие сделки",            b:240, a:10, f:1, u:"month",   c:1, code:false, est:true,  q:"Найди сделки без активности больше 14 дней, сгруппируй по менеджерам и предложи, что с ними делать", link:"", scope:"team", freqEditable:false},
+  {id:"dash",  group:"mkt",   role:"emp",   n:"Маркетинговый дашборд",          p:"Свожу цифры из разных источников в Excel руками",       b:360, a:10, f:1, u:"month",   c:1, code:true,  est:false, q:"Собери дашборд: лиды по источникам за месяц, стоимость лида, конверсия в сделку. Сделай приложением в портале", link:"", scope:"team", freqEditable:false},
+  {id:"comp",  group:"mkt",   role:"emp",   n:"Анализ конкурентов",             p:"Раз в квартал неделю собираю обзор конкурентов",        b:360, a:10, f:1, u:"quarter", c:1, code:false, est:false, q:"Изучи сайты и соцсети конкурентов А, Б, В: позиционирование, цены, акции. Сведи в таблицу и выдели, где мы отличаемся", link:"", scope:"team", freqEditable:false},
+  {id:"diff",  group:"mkt",   role:"emp",   n:"Сравнение документов",           p:"Сверяю версии КП, брифов и договоров глазами",          b:120, a:6,  f:2, u:"month",   c:1, code:false, est:false, q:"Сравни две версии брифа (файлы) и покажи, что изменилось", link:"", scope:"team", freqEditable:true},
+  {id:"land",  group:"mkt",   role:"emp",   n:"Лендинг под акцию",              p:"Простой лендинг неделями ждёт подрядчика",              b:1440,a:20, f:1, u:"quarter", c:1, code:true,  est:false, q:"Собери лендинг под акцию: заголовок, три преимущества, форма заявки, которая создаёт лид в CRM", link:"", scope:"team", freqEditable:false},
 ];
 const taskById = id => TASKS.find(t=>t.id===id);
 
@@ -829,17 +853,24 @@ const taskDefaults = task => ({b:task.b, a:task.a, f:task.f, u:task.u, c:task.c}
 function initState(){ TASKS.forEach(t=>{ state[t.id] = {selected:false, values:taskDefaults(t), dirty:{}}; }); }
 initState();
 
-// Пресет включает свой набор задач и возвращает поля к типовым значениям (c — с множителем пресета).
-// Поля, изменённые руками (dirty), не трогаем: ручная правка сильнее пресета и автозаполнения.
-function applyPreset(presetId){
+// Пресет включает свой набор задач и возвращает поля к типовым значениям (c — с множителем пресета, если он задан;
+// иначе для scope:"person" — реальный штат из counts, для scope:"team" — всегда 1). Поля, изменённые руками
+// (dirty), не трогаем: ручная правка сильнее и пресета, и штата. counts — необязательный снимок блока «Данные
+// о компании» ({ropCount, mgrCount, …}, как readCompany()); без него — прежнее поведение (дефолт 1), так и
+// вызывается в тестах.
+function applyPreset(presetId, counts){
   const P = PRESETS[presetId];
   if(!P) return false;
+  const cnt = counts || {};
   TASKS.forEach(t=>{
     const st = state[t.id], d = taskDefaults(t);
     st.selected = P.on.includes(t.id);
     TASK_FIELDS.forEach(k=>{
       if(st.dirty[k]) return;
-      st.values[k] = (k==="c" && P.c[t.id]!=null) ? P.c[t.id] : d[k];
+      if(k !== "c"){ st.values[k] = d[k]; return; }
+      if(P.c[t.id] != null){ st.values.c = P.c[t.id]; return; }              // явный множитель пресета — в приоритете
+      const roleCnt = ROLES[t.role].cnt;
+      st.values.c = (t.scope === "person" && roleCnt && cnt[roleCnt] != null) ? num(cnt[roleCnt]) : d.c;
     });
   });
   return true;
@@ -848,6 +879,7 @@ function applyPreset(presetId){
 // Автозаполнение из «Данных о компании» (ядро applyCompany): счётчик роли → поле c задач этой роли
 const AUTOFILL = {};
 TASKS.forEach(t=>{
+  if(t.scope !== "person") return;   // scope:"team" — считаем на 1 человека, из штата не подставляем (T6-2, 27.09.2026)
   const cnt = ROLES[t.role].cnt;
   if(cnt) (AUTOFILL[cnt] = AUTOFILL[cnt] || []).push([t.id, "c"]);
 });
@@ -858,6 +890,9 @@ TASKS.forEach(t=>{
    rate     = costHour(оклад роли) = оклад × TAX / HOURS_MONTH — из ядра
    fotMonth = hours × rate                                                                        */
 const num = x => Number(x) || 0;
+// «Сколько человек» для расчёта: у задач scope:"team" всегда 1, даже если в состоянии оказалось другое —
+// командную работу нельзя умножать на штат. У scope:"person" — реальное значение (из штата роли или правки).
+const taskPeopleCount = (task, st) => task.scope === "team" ? 1 : num(st.values.c);
 function taskRawHours(v){
   return Math.max(0, num(v.b) - num(v.a)) / 60 * num(v.f) * (PERIOD_MULT[v.u] || 0) * num(v.c);
 }
@@ -866,7 +901,7 @@ const taskRuns = v => taskRunsPerPerson(v) * num(v.c);                 // зад
 // company = {empSal, mgrSal, ropSal, …} — значения блока «Данные о компании»
 const roleRate = (role, company) => costHour(num(company && company[ROLES[role].sal]));
 function computeTask(task, st, company){
-  const v = st.values;
+  const v = { ...st.values, c: taskPeopleCount(task, st) };   // c — эффективное число людей (см. taskPeopleCount)
   const rawHours = taskRawHours(v);
   const real = realOf(task);
   const hours = rawHours * real;
@@ -887,7 +922,7 @@ function computeAll(company){
     const r = computeTask(t, st, company);
     items.push({task:t, r});
     totalHours += r.hours; totalRawHours += r.rawHours; totalFot += r.fot;
-    runs += r.runs; codeRuns += r.codeRuns; maxC = Math.max(maxC, num(st.values.c));
+    runs += r.runs; codeRuns += r.codeRuns; maxC = Math.max(maxC, taskPeopleCount(t, st));
   });
   return { items, totalHours, totalRawHours, totalFot, runs, codeRuns, maxC,
            fte: totalHours / HOURS_MONTH, days: totalHours / DAY_HOURS };
@@ -902,9 +937,11 @@ const fmtPct = k => Math.round(k*100) + "%";
 function describeTask(task, st, company){
   const v = st.values, r = computeTask(task, st, company);
   const perMonth = Math.round(taskRunsPerPerson(v) * 10) / 10;
+  const people = taskPeopleCount(task, st);
   return "Сейчас задача занимает " + num(v.b) + " мин, с Коворком — " + num(v.a) + " мин: экономия "
     + Math.max(0, num(v.b) - num(v.a)) + " мин за раз. Частота " + num(v.f) + " " + (PERIOD_LABEL[v.u] || "")
-    + " (≈ " + perMonth.toLocaleString("ru-RU") + " раз в месяц), делают " + num(v.c) + " чел. — это "
+    + " (≈ " + perMonth.toLocaleString("ru-RU") + " раз в месяц), " + (people === 1 ? "делает" : "делают") + " "
+    + people + " чел. — это "
     + fmtHours(r.rawHours) + " в месяц. Учитываем реализуемую долю " + fmtPct(r.real) + ": в результат уходит "
     + fmtHours(r.hours) + ". Час " + ROLES[task.role].label + " стоит " + fmtMoney(r.rate)
     + " (оклад × 1,4 ÷ 176), итого " + fmtMoney(r.fot) + " в месяц.";
@@ -1048,6 +1085,10 @@ function buildSummaryText(res, tariff, sub, econ, company, opts){
    Чистая функция: всё, что нужно от страницы (название компании, логотип, дата), приходит в opts. */
 const CTA_COWORK_SELF = "https://helpdesk.bitrix24.ru/open/28844790/";   // инструкция: как подключить и работать в Коворк/Код
 const CTA_COWORK_HELP = "https://vibecode.bitrix24.tech/cowork";         // заявка на ранний доступ (см. COWORK-DATA.md)
+// трекинговые ссылки (для href/QR) с utm-меткой — отличить переходы из отчёта; отображаемый текст остаётся чистым (shortUrl обрезает query)
+const withUtm = (u, content) => u + (u.includes("?") ? "&" : "?") + "utm_source=cowork_calc&utm_medium=report&utm_content=" + content;
+const CTA_COWORK_SELF_TRACK = withUtm(CTA_COWORK_SELF, "self");
+const CTA_COWORK_HELP_TRACK = withUtm(CTA_COWORK_HELP, "request");
 const REPORT_EXTRA_CSS = ""
   + ".tt{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:4px}"
   + ".tt th,.tt td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}"
@@ -1121,7 +1162,7 @@ function buildCoworkReportHtml(calc, opts){
     + " " + COWORK_PRICE_CONFIG.requires;
 
   // 5) CTA — инструкция и заявка с QR (ссылки — рабочие значения из COWORK-DATA.md)
-  const shortUrl = u => u.replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/$/,"");
+  const shortUrl = u => u.replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\?.*$/,"").replace(/\/$/,"");
   const ctaCard = (url, primary, title, text, btn, cap) => !url ? "" :
     "<div class='cta-card"+(primary?" primary":"")+"'>"
     + "<div class='cta-h'><span class='cta-i"+(primary?"":" alt")+"'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
@@ -1132,8 +1173,8 @@ function buildCoworkReportHtml(calc, opts){
     + "<div class='cta-qr'><span class='qrbox'>"+makeQrSvg(url)+"</span><span class='cta-cap'>"+cap+"</span></div></div>";
   const cta = (CTA_COWORK_SELF || CTA_COWORK_HELP)
     ? "<section class='cta-sec'><p class='sec-eyebrow'>Как начать работать с Коворк/Код</p><div class='cta-grid'>"
-      + ctaCard(CTA_COWORK_SELF, true, "Подключить самостоятельно", "Скачайте приложение в разделе «AI и агенты → Коворк/Код», подключите его к своему Битрикс24 и начните с бесплатного тарифа.", "Открыть инструкцию", "Наведите камеру телефона — откроется инструкция")
-      + ctaCard(CTA_COWORK_HELP, false, "Получить ранний доступ", "Оставьте заявку на платформе Вайбкод — команда Битрикс24 подключит Коворк/Код и поможет с первыми задачами.", "Оставить заявку", "Скан — откроется форма заявки")
+      + ctaCard(CTA_COWORK_SELF_TRACK, true, "Подключить самостоятельно", "Скачайте приложение в разделе «AI и агенты → Коворк/Код», подключите его к своему Битрикс24 и начните с бесплатного тарифа.", "Открыть инструкцию", "Наведите камеру телефона — откроется инструкция")
+      + ctaCard(CTA_COWORK_HELP_TRACK, false, "Получить ранний доступ", "Оставьте заявку на платформе Вайбкод — команда Битрикс24 подключит Коворк/Код и поможет с первыми задачами.", "Оставить заявку", "Скан — откроется форма заявки")
       + "</div></section>"
     : "";
 
@@ -1232,8 +1273,13 @@ function renderRateHints(company){
   });
 }
 
-/* ---------- Карточки задач: рендер один раз, дальше точечные обновления (ТЗ §4.5) ---------- */
-const UNIT_OPTIONS = Object.keys(PERIOD_LABEL);
+/* ---------- Карточки задач: рендер один раз, дальше точечные обновления (ТЗ §4.5) ----------
+   Редактируемое поле ровно одно всегда — «Сейчас, мин»: это то, что пользователь реально знает о своей компании.
+   «С Коворком» — допущение продукта, не ввод (никто не может сам оценить скорость ИИ) — только в плашке заголовка.
+   «Как часто» — редактируется числом, без выбора единицы периода (она зашита в саму задачу), и только там, где
+   объём объективно разный у разных компаний (freqEditable). «Сколько человек» как поле ввода убрано совсем:
+   для scope:"person" число берётся из штата в «Данных о компании», для scope:"team" — всегда 1 (см. @cw:model,
+   таблица per-task в анализе полей задач 27.09.2026); строка «Считаем на N чел.» с «i» объясняет, откуда число. */
 function fieldHtml(task, k, label, suf){
   return '<div class="field" data-field="'+k+'"><label>'+label+'</label><div class="in">'
     + '<input type="text" inputmode="decimal" class="num-in" data-k="'+k+'" value="'+groupFmt(String(task[k]))+'" aria-label="'+label+', '+esc(task.n)+'">'
@@ -1241,7 +1287,11 @@ function fieldHtml(task, k, label, suf){
 }
 function cardHtml(task){
   const flags = (task.code ? '<span class="flag code">режим Код</span>' : '') + (task.est ? '<span class="flag est">примерно</span>' : '');
-  const units = UNIT_OPTIONS.map(u=>'<option value="'+u+'"'+(u===task.u?' selected':'')+'>'+PERIOD_LABEL[u]+'</option>').join("");
+  const freqField = task.freqEditable
+    ? '<div class="field freq" data-field="f"><label>Как часто</label><div class="in">'
+      + '<input type="text" inputmode="decimal" class="num-in" data-k="f" value="'+task.f+'" aria-label="Как часто, '+esc(task.n)+'">'
+      + '<span class="suf">'+PERIOD_LABEL[task.u]+'</span></div></div>'
+    : '';
   return '<div class="card" id="card-'+task.id+'" data-id="'+task.id+'">'
     + '<label class="card-head" for="chk-'+task.id+'">'
     +   '<input type="checkbox" class="chk task-chk" id="chk-'+task.id+'" data-id="'+task.id+'">'
@@ -1251,17 +1301,15 @@ function cardHtml(task){
     + '<div class="card-body" hidden>'
     +   '<div class="fields">'
     +     fieldHtml(task, "b", "Сейчас", "мин")
-    +     fieldHtml(task, "a", "С Коворком", "мин")
-    +     '<div class="field freq" data-field="f"><label>Как часто</label><div class="in">'
-    +       '<input type="text" inputmode="decimal" class="num-in" data-k="f" value="'+task.f+'" aria-label="Как часто, '+esc(task.n)+'">'
-    +       '<select class="unit-sel" data-k="u" aria-label="Единица периода">'+units+'</select></div></div>'
-    +     fieldHtml(task, "c", "Сколько человек", "чел.")
+    +     freqField
     +   '</div>'
     +   '<div class="result">'
     +     '<div class="res-head"><button type="button" class="info-btn" data-info="'+task.id+'" aria-label="Как считается экономия">'+ICON_INFO+'</button></div>'
     +     '<div class="res-row total"><span class="lbl">Вы экономите</span><span class="val" data-out="sum"></span></div>'
     +     '<div class="real-row">В расчёте учтена реализуемая доля: <b data-out="real"></b>'
     +       '<button type="button" class="info-btn" data-real="'+task.id+'" aria-label="Почему такой коэффициент">'+ICON_INFO+'</button></div>'
+    +     '<div class="scope-row">Считаем на <b data-out="scopeCount"></b> чел.'
+    +       '<button type="button" class="info-btn" data-info="scope:'+task.id+'" aria-label="Почему такое число людей">'+ICON_INFO+'</button></div>'
     +   '</div>'
     +   '<p class="prompt"><b>Попробуйте написать Коворку</b>«'+esc(task.q)+'»</p>'
     + '</div></div>';
@@ -1284,7 +1332,6 @@ function syncCards(){
     card.classList.toggle("active", st.selected);
     card.querySelector(".card-body").hidden = !st.selected;
     card.querySelectorAll(".num-in").forEach(inp=>{ inp.value = groupFmt(String(num(st.values[inp.dataset.k]))); });
-    card.querySelector(".unit-sel").value = st.values.u;
   });
 }
 // одна карточка ← расчёт: плашки, строка экономии, коэффициент
@@ -1298,6 +1345,7 @@ function updateCard(task, company){
   card.querySelector('[data-out="sum"]').innerHTML = fmtHours(r.hours) + " в месяц · " + fmtMoney(r.fot)
     + (r.rawHours > r.hours ? ' <small>освобождается ' + fmtHours(r.rawHours) + '</small>' : '');
   card.querySelector('[data-out="real"]').textContent = fmtPct(r.real);
+  card.querySelector('[data-out="scopeCount"]').textContent = taskPeopleCount(task, st);
 }
 function updateGroupCounts(){
   GROUPS.forEach(g=>{
@@ -1320,7 +1368,7 @@ function markPreset(id){
 // любая ручная правка снимает подсветку пресета, данные не сбрасывает (ТЗ §4.1)
 const clearPreset = () => markPreset(null);
 function choosePreset(id, byUser){
-  if(!applyPreset(id)) return;
+  if(!applyPreset(id, readCompany())) return;   // реальный штат компании — не хардкодный дефолт (см. @cw:model)
   pricing.tierSel = null; pricing.seatsManual = false;
   markPreset(id);
   if(byUser){   // выбор пресета руками — событие сессии; стартовый пресет при загрузке не считается активностью
@@ -1398,12 +1446,6 @@ $("groups").addEventListener("change", e=>{
     sessBlock(task.n, st.selected);
     clearPreset();
     updateCard(task, readCompany());
-    recompute();
-  } else if(el.classList.contains("unit-sel")){
-    const id = el.closest(".card").dataset.id, st = state[id];
-    st.values.u = el.value; st.dirty.u = true;
-    sessField(id, "u"); clearPreset();
-    updateCard(taskById(id), readCompany());
     recompute();
   }
 });
@@ -1605,6 +1647,15 @@ function openInfo(key){
     const p1 = document.createElement("p"); p1.textContent = c ? c.why : "";
     const p2 = document.createElement("p"); p2.className = "info-src"; p2.textContent = REAL_INFO;
     x.append(p1, p2);
+  } else if(k.startsWith("scope:")){
+    const task = taskById(k.slice(6));
+    t.textContent = "Почему на столько людей";
+    if(task && task.scope === "team"){
+      x.textContent = "Эту задачу на практике делает один человек на всю команду (например, ответственный за отчётность или порядок в CRM), а не каждый сотрудник по отдельности. Поэтому считаем на 1 человека, а не умножаем на весь штат.";
+    } else if(task){
+      const role = ROLES[task.role], people = taskPeopleCount(task, state[task.id]);
+      x.textContent = "Эту задачу делает каждый " + role.label + " по отдельности, поэтому умножаем на их число из блока «Данные о компании»: " + people + " " + role.pl + ". Измените число там же, если оно неточное.";
+    }
   } else {
     const task = taskById(k);
     t.textContent = task ? "Как считается: " + task.n : "Как считается";
@@ -1767,6 +1818,16 @@ sendLog = function(record){
   if(record && record.type === "session") Object.assign(record, coworkSessionFields(lastCalc, {preset: activePreset || "", copies: copiesCount}));
   return coreSendLog(record);
 };
+// переключатель продуктов линейки (BitrixGPT ⇄ Коворк/Код) → вкладка «Лендинги»
+function logProductSwitch(url, title){
+  sendLog(Object.assign({
+    type: "landing", ts: new Date().toISOString(), version: PRODUCT_VERSION,
+    landing: url, title: title || "", external: true,
+  }, hostInfo()));
+}
+document.querySelectorAll(".prod-switch a.prod-opt[href]").forEach(a=>{
+  a.addEventListener("click", ()=> logProductSwitch(a.href, a.textContent.trim()));
+});
 
 // @core:info-modal
 const infoModal = document.createElement("div");
