@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<!-- core: 40e45a3f0a02 -->
+<!-- core: 00df20954e08 -->
 <!-- Файл собран build_cowork.py из канона index.html (BitrixGPT) и шаблона cowork.src.html. Руками не править: общее — в каноне, продуктовое — в шаблоне. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1404,10 +1404,12 @@ function saveState(){
   }));
 }
 // восстановление: true, если сохранённое состояние подхвачено; иначе применяется пресет по умолчанию
+let lastSavedAt = 0;   // время восстановленного состояния — порог для общего профиля компании (ядро)
 function restoreState(){
   let s = null;
   try { s = JSON.parse(lsGet(STATE_KEY, "null")); } catch(e){ s = null; }
   if(!s || s.schema !== STATE_SCHEMA || !s.tasks) return false;
+  lastSavedAt = Number(s.savedAt) || 0;
   Object.entries(s.company || {}).forEach(([k, v])=>{
     const inp = document.querySelector('.comp-in[data-comp="'+k+'"]');
     if(!inp || typeof v !== "string") return;
@@ -1710,6 +1712,75 @@ document.querySelectorAll(".comp-in").forEach(inp=>{
     applyCompany(inp);
     sessComp(inp.dataset.comp);
     recompute();
+    saveCompanyProfile();   // профиль компании общий для BitrixGPT и Коворка
+  });
+});
+
+/* ---------- Общий профиль компании линейки (BitrixGPT ⇄ Коворк/Код) ----------
+   Блок «Данные о компании» один и тот же на обеих страницах, а localStorage у bitrixgpt.online и
+   cowork.bitrixgpt.online разный. Поэтому профиль (название, шесть полей, время правки) хранится в cookie
+   на родительском домене .bitrixgpt.online (её видят все поддомены) и зеркалится в localStorage этого origin.
+   При клике по переключателю продуктов профиль дополнительно уезжает в хэш адреса — запасной канал для
+   iframe, где cookie третьей стороны блокируются (Safari). Хэш стирается сразу после чтения, до того как
+   аналитика возьмёт location.href. Правило: последняя правка побеждает. Продукт вызывает
+   applySharedCompany() сам, в подходящий момент своей инициализации. */
+const COMPANY_PROFILE_KEY = "bgpt_company";
+const COMPANY_HASH_PARAM  = "bgptco";
+function companyProfileNow(){
+  const p = { ts: Date.now(), name: ((document.querySelector("#company-name") || {}).value || "").trim(), v: {} };
+  document.querySelectorAll(".comp-in[data-comp]").forEach(inp=>{ p.v[inp.dataset.comp] = inp.value; });
+  return p;
+}
+function parseCompanyProfile(raw){
+  try{ const p = JSON.parse(raw); return (p && p.v && typeof p.v === "object") ? p : null; }catch(e){ return null; }
+}
+function saveCompanyProfile(){
+  const s = JSON.stringify(companyProfileNow());
+  const domain = /(^|\.)bitrixgpt\.online$/.test(location.hostname) ? ";domain=.bitrixgpt.online" : "";
+  const secure = location.protocol === "https:" ? ";Secure" : "";
+  try{ document.cookie = COMPANY_PROFILE_KEY + "=" + encodeURIComponent(s) + ";path=/;max-age=31536000;SameSite=Lax" + secure + domain; }catch(e){}
+  try{ localStorage.setItem(COMPANY_PROFILE_KEY, s); }catch(e){}
+}
+function loadCompanyProfile(){   // самый свежий из трёх источников: хэш адреса, cookie домена, localStorage
+  const found = [];
+  const hm = new RegExp("(?:^#|[#&])" + COMPANY_HASH_PARAM + "=([^&]*)").exec(location.hash || "");
+  if(hm){
+    try{ found.push(parseCompanyProfile(decodeURIComponent(hm[1]))); }catch(e){}
+    const rest = (location.hash || "").replace(/^#/, "").split("&").filter(x => x.indexOf(COMPANY_HASH_PARAM + "=") !== 0).join("&");
+    try{ history.replaceState(null, "", location.pathname + location.search + (rest ? "#" + rest : "")); }catch(e){}
+  }
+  try{
+    const c = document.cookie.split("; ").find(x => x.indexOf(COMPANY_PROFILE_KEY + "=") === 0);
+    if(c) found.push(parseCompanyProfile(decodeURIComponent(c.slice(COMPANY_PROFILE_KEY.length + 1))));
+  }catch(e){}
+  try{ found.push(parseCompanyProfile(localStorage.getItem(COMPANY_PROFILE_KEY) || "")); }catch(e){}
+  return found.filter(Boolean).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0] || null;
+}
+// Подставить общий профиль в поля компании. minTs — время локально сохранённого состояния продукта:
+// профиль старше него не применяется (продукт уже восстановил более свежие значения). true = поля обновлены.
+function applySharedCompany(minTs){
+  const p = loadCompanyProfile();
+  if(!p || (minTs && (p.ts || 0) < minTs)) return false;
+  const nameEl = document.querySelector("#company-name");
+  if(nameEl && typeof p.name === "string") nameEl.value = p.name;
+  document.querySelectorAll(".comp-in[data-comp]").forEach(inp=>{
+    const k = inp.dataset.comp;
+    if(!(k in p.v) || typeof p.v[k] !== "string") return;
+    inp.value = groupFmt(p.v[k]);
+    inp.classList.remove("prefilled");   // это значения пользователя, а не заготовка
+    applyCompany(inp);
+  });
+  return true;
+}
+(function(){ const n = document.querySelector("#company-name"); if(n) n.addEventListener("input", saveCompanyProfile); })();
+// Переход по переключателю продуктов: профиль уезжает в хэш целевого адреса. href ссылки не меняем —
+// его логирует аналитика перехода, а окладам в таблице делать нечего. Клики с модификаторами не трогаем.
+document.querySelectorAll(".prod-switch a.prod-opt[href]").forEach(a=>{
+  a.addEventListener("click", e=>{
+    saveCompanyProfile();
+    if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
+    e.preventDefault();
+    location.assign(a.href.split("#")[0] + "#" + COMPANY_HASH_PARAM + "=" + encodeURIComponent(JSON.stringify(companyProfileNow())));
   });
 });
 // @core:end
@@ -1854,8 +1925,10 @@ document.addEventListener("click", e=>{
 renderPresets();
 renderGroups();
 renderTiers();
-if(restoreState()){ syncCards(); recompute(); }   // прошлый заход: задачи, поля, компания, пресет, тариф
-else choosePreset(DEFAULT_PRESET);
+// Прошлый заход: задачи, поля, компания, пресет, тариф. Поверх — общий профиль компании линейки (ядро):
+// то, что ввели на странице BitrixGPT или в прошлый визит, если оно свежее сохранённого здесь.
+if(restoreState()){ applySharedCompany(lastSavedAt); syncCards(); recompute(); }
+else { applySharedCompany(); choosePreset(DEFAULT_PRESET); }
 </script>
 </body>
 </html>
