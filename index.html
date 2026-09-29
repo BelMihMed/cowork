@@ -250,9 +250,9 @@
   .rate-hint{font-size:12px;color:var(--faint);margin-top:5px;font-family:'JetBrains Mono',monospace}
 
   /* группы задач */
-  .group{border-radius:24px;padding:20px 20px 10px;margin-bottom:18px}
+  .group{border-radius:22px;padding:14px 14px 8px;margin-bottom:16px}
   .group-boss{background:var(--task-boss-bg)} .group-sales{background:var(--task-sales-bg)} .group-mkt{background:var(--task-mkt-bg)}
-  .group-label{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:2px 6px 16px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+  .group-label{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:2px 6px 10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
   .group-label small{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
   .group-boss .group-label{color:var(--task-boss-ink)} .group-sales .group-label{color:var(--task-sales-ink)} .group-mkt .group-label{color:var(--task-mkt-ink)}
   .group-boss .chk:checked{background:var(--task-boss);border-color:var(--task-boss)}
@@ -263,35 +263,59 @@
   .group-mkt .card.active{box-shadow:0 0 0 2px var(--task-mkt),0 12px 30px rgba(18,134,111,.14)}
 
   /* карточка задачи */
-  .card{background:#fff;border:0;border-radius:var(--radius);margin-bottom:12px;overflow:hidden;box-shadow:var(--card-shadow);transition:box-shadow .18s}
+  .card{background:#fff;border:0;border-radius:var(--radius);margin-bottom:8px;overflow:hidden;box-shadow:var(--card-shadow);transition:box-shadow .18s}
   .card:last-child{margin-bottom:0}
-  .card-head{display:flex;align-items:flex-start;gap:14px;padding:18px 22px;cursor:pointer;user-select:none;transition:background .15s}
+  .card-head{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;user-select:none;transition:background .15s}
   .card-head:hover{background:#fafafc}
-  .task-chk{border-radius:50%}
+  .task-chk{border-radius:50%;margin-top:0}
   .card-title{flex:1;min-width:0}
-  .card-title .t{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
-  .card-title .s{display:block;font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.5}
-  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
-  .pill,.flag{font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
-  .pill.hand{background:var(--panel);color:var(--muted)}
-  .pill.ai{background:var(--cw-accent-soft);color:var(--cw-accent-ink)}
+  .card-title .t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:-.01em;min-width:0}
+  .card-title .t .tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .card-title .s{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tm{flex:none;text-align:right;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25;white-space:nowrap}
+  .tm .arr{color:var(--faint);font-weight:600;margin:0 3px}
+  .tm .ai{color:var(--cw-accent-ink)}
+  .tm small{display:block;font-size:10.5px;font-weight:600;color:var(--faint);letter-spacing:.02em}
+  .flag{flex:none;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
   .flag.code{background:#f1eeff;color:#5b47d6}
   .flag.est{background:#fdf6ea;color:#a9701f}
-  .card-body{padding:0 22px 22px;border-top:1px solid #f2f2f5}
+  .card-body{padding:12px 16px 14px;border-top:1px solid #f2f2f5}
   .card-body[hidden]{display:none}
-  .field.freq .in input{flex:0 0 64px;width:64px;padding-right:4px}
-  .result{margin-top:16px;background:var(--panel);border:0;border-radius:14px;padding:13px 18px}
-  .res-head{display:flex;justify-content:flex-end;margin:-2px 0 2px}
-  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0;font-size:15px}
-  .res-row .lbl{color:var(--muted)}
-  .res-row .val{font-weight:800;font-variant-numeric:tabular-nums;color:var(--cw-accent-ink);text-align:right}
-  .res-row .val small{font-weight:600;color:var(--muted);font-size:12.5px}
-  .real-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);border-top:1px dashed #dcdce2;margin-top:6px;padding:8px 0 1px}
-  .scope-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);margin-top:4px}
-  .real-row b,.scope-row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-  .real-row .info-btn,.scope-row .info-btn{padding:0 1px} .real-row .info-btn svg,.scope-row .info-btn svg{width:15px;height:15px}
-  .prompt{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);background:var(--cw-accent-soft);border-radius:12px;padding:11px 14px}
-  .prompt b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cw-accent-ink);margin-bottom:4px}
+  .cb-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px}
+  .card-body .fields{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0}
+  .card-body .field{flex-direction:row;align-items:center;gap:8px}
+  .card-body .field label{margin:0;white-space:nowrap}
+  .card-body .field .in{margin-top:0}
+  .card-body .field .in input{flex:0 0 68px;width:68px;padding:7px 4px 7px 11px;font-size:14px;text-align:right}
+  .card-body .field .suf{padding:0 11px 0 5px}
+  .result{display:flex;align-items:center;gap:6px;margin-left:auto;text-align:right}
+  .res-row .lbl{display:block;font-size:11px;color:var(--faint);line-height:1.2}
+  .res-row .val{display:block;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;color:var(--cw-accent-ink);text-align:right}
+  .res-row .val small{font-weight:600;color:var(--muted);font-size:12px}
+  .meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;font-size:12px;color:var(--muted)}
+  .meta-row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .meta-row .sep{margin:0 4px;color:var(--faint)}
+  .meta-row .info-btn,.result .info-btn{padding:0 1px} .meta-row .info-btn svg,.result .info-btn svg{width:15px;height:15px}
+  .prompt{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink);background:var(--cw-accent-soft);border-radius:10px;padding:7px 8px 7px 12px}
+  .prompt .pt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prompt .pt b{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cw-accent-ink);margin-right:6px}
+  .prompt.open{align-items:flex-start}
+  .prompt.open .pt{white-space:normal}
+  .prompt .pb{flex:none;display:flex;gap:4px}
+  .prompt .pb button{font:inherit;font-size:12px;font-weight:700;color:var(--cw-accent-ink);background:#fff;border:0;border-radius:8px;padding:4px 10px;cursor:pointer}
+  .prompt .pb button:hover{filter:brightness(.96)}
+  @media(max-width:560px){
+    .card-head{padding:10px 12px;flex-wrap:wrap;align-items:flex-start}
+    .card-title{flex:1 1 200px}
+    .card-title .t{flex-wrap:wrap;gap:2px 8px}
+    .card-title .t .tn,.card-title .s{white-space:normal}
+    .tm{flex:1 1 100%;text-align:left;padding-left:32px}
+    .tm small{display:inline;margin-left:8px}
+    .result{margin-left:0}
+    .prompt{flex-wrap:wrap}
+    .prompt .pt{flex:1 1 100%}
+    .prompt.open .pt{white-space:normal}
+  }
 
   /* панель итога (T10) */
   .summary-panel{color:#fff;border:0;border-radius:26px;padding:24px 24px 22px;
@@ -1293,25 +1317,28 @@ function cardHtml(task){
       + '<span class="suf">'+PERIOD_LABEL[task.u]+'</span></div></div>'
     : '';
   return '<div class="card" id="card-'+task.id+'" data-id="'+task.id+'">'
-    + '<label class="card-head" for="chk-'+task.id+'">'
+    + '<label class="card-head" for="chk-'+task.id+'" title="'+esc(task.p)+'">'
     +   '<input type="checkbox" class="chk task-chk" id="chk-'+task.id+'" data-id="'+task.id+'">'
-    +   '<span class="card-title"><span class="t">'+esc(task.n)+'</span><span class="s">'+esc(task.p)+'</span>'
-    +   '<span class="pills"><span class="pill hand" data-out="b">Сейчас · '+fmtMin(task.b)+'</span><span class="pill ai" data-out="a">С Коворком · '+fmtMin(task.a)+'</span>'+flags+'</span></span>'
+    +   '<span class="card-title"><span class="t"><span class="tn">'+esc(task.n)+'</span>'+flags+'</span><span class="s">'+esc(task.p)+'</span></span>'
+    +   '<span class="tm"><span data-out="b">'+fmtMin(task.b)+'</span><span class="arr">→</span><span class="ai" data-out="a">'+fmtMin(task.a)+'</span><small>сейчас → с Коворком</small></span>'
     + '</label>'
     + '<div class="card-body" hidden>'
-    +   '<div class="fields">'
-    +     fieldHtml(task, "b", "Сейчас", "мин")
-    +     freqField
+    +   '<div class="cb-row">'
+    +     '<div class="fields">'
+    +       fieldHtml(task, "b", "Сейчас", "мин")
+    +       freqField
+    +     '</div>'
+    +     '<div class="result">'
+    +       '<div class="res-row total"><span class="lbl">Вы экономите</span><span class="val" data-out="sum"></span></div>'
+    +       '<button type="button" class="info-btn" data-info="'+task.id+'" aria-label="Как считается экономия">'+ICON_INFO+'</button>'
+    +     '</div>'
     +   '</div>'
-    +   '<div class="result">'
-    +     '<div class="res-head"><button type="button" class="info-btn" data-info="'+task.id+'" aria-label="Как считается экономия">'+ICON_INFO+'</button></div>'
-    +     '<div class="res-row total"><span class="lbl">Вы экономите</span><span class="val" data-out="sum"></span></div>'
-    +     '<div class="real-row">В расчёте учтена реализуемая доля: <b data-out="real"></b>'
-    +       '<button type="button" class="info-btn" data-real="'+task.id+'" aria-label="Почему такой коэффициент">'+ICON_INFO+'</button></div>'
-    +     '<div class="scope-row">Считаем на <b data-out="scopeCount"></b> чел.'
-    +       '<button type="button" class="info-btn" data-info="scope:'+task.id+'" aria-label="Почему такое число людей">'+ICON_INFO+'</button></div>'
-    +   '</div>'
-    +   '<p class="prompt"><b>Попробуйте написать Коворку</b>«'+esc(task.q)+'»</p>'
+    +   '<div class="meta-row">Реализуемая доля <b data-out="real"></b>'
+    +     '<button type="button" class="info-btn" data-real="'+task.id+'" aria-label="Почему такой коэффициент">'+ICON_INFO+'</button>'
+    +     '<span class="sep">·</span>на <b data-out="scopeCount"></b> чел.'
+    +     '<button type="button" class="info-btn" data-info="scope:'+task.id+'" aria-label="Почему такое число людей">'+ICON_INFO+'</button></div>'
+    +   '<div class="prompt"><span class="pt"><b>Промпт для Коворка</b>«'+esc(task.q)+'»</span>'
+    +     '<span class="pb"><button type="button" data-prompt="show">Показать</button><button type="button" data-prompt="copy">Копировать</button></span></div>'
     + '</div></div>';
 }
 function renderGroups(){
@@ -1338,8 +1365,8 @@ function syncCards(){
 function updateCard(task, company){
   const st = state[task.id], card = $("card-"+task.id);
   if(!card) return;
-  card.querySelector('[data-out="b"]').textContent = "Сейчас · " + fmtMin(num(st.values.b));
-  card.querySelector('[data-out="a"]').textContent = "С Коворком · " + fmtMin(num(st.values.a));
+  card.querySelector('[data-out="b"]').textContent = fmtMin(num(st.values.b));
+  card.querySelector('[data-out="a"]').textContent = fmtMin(num(st.values.a));
   if(!st.selected) return;
   const r = computeTask(task, st, company);
   card.querySelector('[data-out="sum"]').innerHTML = fmtHours(r.hours) + " в месяц · " + fmtMoney(r.fot)
@@ -1450,6 +1477,18 @@ $("groups").addEventListener("change", e=>{
     updateCard(task, readCompany());
     recompute();
   }
+});
+$("groups").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-prompt]"); if(!btn) return;
+  const box = btn.closest(".prompt"), task = taskById(btn.closest(".card").dataset.id);
+  if(btn.dataset.prompt === "show"){
+    const open = box.classList.toggle("open");
+    btn.textContent = open ? "Скрыть" : "Показать";
+    return;
+  }
+  const done = ()=>{ showCopied(); };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(task.q).then(done, ()=>copyFallback(task.q));
+  else copyFallback(task.q);
 });
 $("groups").addEventListener("input", e=>{
   const inp = e.target;
