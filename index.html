@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<!-- core: 00df20954e08 -->
+<!-- core: 7e18170e61ce -->
 <!-- Файл собран build_cowork.py из канона index.html (BitrixGPT) и шаблона cowork.src.html. Руками не править: общее — в каноне, продуктовое — в шаблоне. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -229,22 +229,17 @@
   }
   .groups{min-width:0}
   .navbar{top:calc(10px + env(safe-area-inset-top,0px))}
+  .navbar .chip[data-preset]{color:var(--cw-accent-ink);background:var(--cw-accent-soft)}
   .navbar .chip[data-go="sec-boss"]{color:var(--task-boss-ink);background:var(--task-boss-bg)}
   .navbar .chip[data-go="sec-sales"]{color:var(--task-sales-ink);background:var(--task-sales-bg)}
   .navbar .chip[data-go="sec-mkt"]{color:var(--task-mkt-ink);background:var(--task-mkt-bg)}
+  .navbar .chip[aria-pressed="true"]{color:#fff;background:var(--cw-accent)}
   .navbar .chip.go-summary{color:#fff;background:linear-gradient(95deg,var(--cw-accent),hsl(205,78%,48%))}
   .prod-opt.sel{background:linear-gradient(95deg,var(--cw-accent),hsl(205,78%,48%))}
   .navbar .reset{font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:10px}
   .navbar .reset:hover{color:var(--ink);background:var(--panel)}
   .group-boss,.group-sales,.group-mkt,.summary-panel{scroll-margin-top:84px}
 
-  /* пресеты «Кто вы?» */
-  .presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:18px}
-  .presets .lbl{font-size:13px;font-weight:700;color:var(--muted);margin-right:4px}
-  .presets .pchip{font:inherit;font-size:13.5px;font-weight:700;color:var(--cw-accent-ink);background:var(--cw-accent-soft);
-    border:0;border-radius:20px;padding:9px 16px;cursor:pointer;transition:background-color .15s,color .15s}
-  .presets .pchip:hover{filter:brightness(.97)}
-  .presets .pchip[aria-pressed="true"]{color:#fff;background:var(--cw-accent)}
 
   /* ставка часа рядом с окладом */
   .rate-hint{font-size:12px;color:var(--faint);margin-top:5px;font-family:'JetBrains Mono',monospace}
@@ -416,8 +411,6 @@
     <p class="lede">Отметьте задачи, которые вы делаете руками, и посмотрите, сколько часов и денег в месяц освобождает Коворк/Код. Считаем по той же методике, что и калькулятор BitrixGPT: с коэффициентом реализуемости и датированными ценами.</p>
   </div>
 
-  <div class="presets" id="presets" role="group" aria-label="Кто вы?"></div>
-
   <div class="company" id="company">
     <!-- @core:company-html -->
     <div class="company-head">
@@ -444,12 +437,7 @@
   </div>
 
   <div class="navbar">
-    <div class="navchips">
-      <button type="button" class="chip" data-go="sec-boss">Руководитель</button>
-      <button type="button" class="chip" data-go="sec-sales">Продажи</button>
-      <button type="button" class="chip" data-go="sec-mkt">Маркетинг</button>
-      <button type="button" class="chip go-summary" data-go="summary">Итог ↓</button>
-    </div>
+    <div class="navchips" id="navchips"></div>
     <div class="mini">
       <span class="cnt" id="nav-count">Ничего не выбрано</span>
       <span id="nav-total"></span>
@@ -1383,14 +1371,17 @@ function updateGroupCounts(){
 }
 
 /* ---------- Пресеты «Кто вы?» ---------- */
+// пресет живёт в липком навбаре: одна строка на роль, реально включает задачи (choosePreset) и ведёт к своей секции
 function renderPresets(){
-  $("presets").innerHTML = '<span class="lbl">Кто вы?</span>' + Object.entries(PRESETS).map(([id,p])=>
-    '<button type="button" class="pchip" data-preset="'+id+'" aria-pressed="false">'+p.label+'</button>').join("");
+  const GO = {boss:"sec-boss", sales:"sec-sales", mkt:"sec-mkt", team:"groups"};
+  $("navchips").innerHTML = Object.entries(PRESETS).map(([id,p])=>
+    '<button type="button" class="chip" data-preset="'+id+'" data-go="'+GO[id]+'" aria-pressed="false">'+p.label+'</button>').join("")
+    + '<button type="button" class="chip go-summary" data-go="summary">Итог ↓</button>';
 }
 let activePreset = null;
 function markPreset(id){
   activePreset = id;
-  document.querySelectorAll("#presets .pchip").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.preset===id)));
+  document.querySelectorAll("#navchips [data-preset]").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.preset===id)));
 }
 // любая ручная правка снимает подсветку пресета, данные не сбрасывает (ТЗ §4.1)
 const clearPreset = () => markPreset(null);
@@ -1500,11 +1491,11 @@ $("groups").addEventListener("input", e=>{
   updateCard(taskById(id), readCompany());
   recompute();
 });
-$("presets").addEventListener("click", e=>{
-  const b = e.target.closest(".pchip"); if(b) choosePreset(b.dataset.preset, true);
-});
-document.querySelectorAll(".navbar .chip").forEach(btn=>{
-  btn.addEventListener("click", ()=>{ const el = $(btn.dataset.go); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); });
+// один чип — и применяет пресет (если есть data-preset), и ведёт к секции (если есть data-go); «Итог» — только go
+$("navchips").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  if(b.dataset.preset) choosePreset(b.dataset.preset, true);
+  if(b.dataset.go){ const el = $(b.dataset.go); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }
 });
 $("reset-btn").addEventListener("click", resetAll);
 
@@ -1743,17 +1734,46 @@ function applyCompany(inp){
     if(target) target.value = groupFmt(String(val));
   });
 }
+/* Средняя ЗП считается автоматически — средневзвешенная по менеджерам и руководителям:
+   (менеджеры × ЗП менеджера + РОПы × ЗП РОПа) / (менеджеры + РОПы). Оклад остальных сотрудников в форме
+   не задан, поэтому «Сотрудников всего» в формуле не участвует. Поле можно править руками: пока значение
+   отличается от расчётного, оно считается ручным и пересчёт его не трогает; очистили поле — снова авто.
+   Признак ручной правки не хранится, а выводится сравнением значения с расчётом (detectEmpSalManual). */
+const EMP_SAL_DEPS = ["mgrCount","mgrSal","ropCount","ropSal"];
+let empSalManual = false;
+const compEl = k => document.querySelector('.comp-in[data-comp="'+k+'"]');
+function avgSalCalc(){
+  const g = k => { const el = compEl(k); return el ? parseNum(el.value) : 0; };
+  const n = g("mgrCount") + g("ropCount");
+  return n > 0 ? Math.round((g("mgrCount")*g("mgrSal") + g("ropCount")*g("ropSal")) / n) : 0;
+}
+function detectEmpSalManual(){
+  const el = compEl("empSal"); if(!el) return;
+  const v = parseNum(el.value), c = avgSalCalc();
+  empSalManual = v > 0 && c > 0 && v !== c;
+}
+function autoEmpSal(fromUser){
+  const el = compEl("empSal"), c = avgSalCalc();
+  if(!el || empSalManual || c <= 0) return;
+  el.value = groupFmt(String(c));
+  if(fromUser) el.classList.remove("prefilled");
+  applyCompany(el);
+}
 document.querySelectorAll(".comp-in").forEach(inp=>{
   applyCompany(inp);   // подставить предзаполненные значения в блоки на старте
+  inp.addEventListener("focusin", detectEmpSalManual);   // до правки: значение ручное или расчётное (после восстановления состояния)
   inp.addEventListener("input", ()=>{
     inp.classList.remove("prefilled");   // ручной ввод — стандартный цвет
     onNumInput(inp);
     applyCompany(inp);
+    if(inp.dataset.comp === "empSal"){ detectEmpSalManual(); autoEmpSal(true); }   // пусто → вернуть расчёт
+    else if(EMP_SAL_DEPS.includes(inp.dataset.comp)) autoEmpSal(true);
     sessComp(inp.dataset.comp);
     recompute();
     saveCompanyProfile();   // профиль компании общий для BitrixGPT и Коворка
   });
 });
+autoEmpSal(false);   // на старте «Средняя ЗП» = расчёт по менеджерам и руководителям (заготовки остаются курсивом)
 
 /* ---------- Общий профиль компании линейки (BitrixGPT ⇄ Коворк/Код) ----------
    Блок «Данные о компании» один и тот же на обеих страницах, а localStorage у bitrixgpt.online и
